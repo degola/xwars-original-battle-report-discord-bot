@@ -96,6 +96,7 @@ client.on(Events.InteractionCreate, async interaction => {
             let cleanedReportContent = reportContent.data
                 .replace(/<!--.*-->/g, '')
                 .replace(/JSON:.*/g, 'json report data reduced for anonymity')
+                .replace(/JSON2:.*/g, 'json report data reduced for anonymity')
                 .replace(new RegExp([parsedJsonData.parties.attacker.planet.position].join(''), 'g'), 'XxXxX')
                 .replace(new RegExp([parsedJsonData.parties.defender.planet.position].join(''), 'g'), 'XxXxX')
 
@@ -153,6 +154,9 @@ ${resultResponse}`
 })
 
 app.use(express.static('reports/'))
+/**
+ * this endpoint is used by Kubernetes liveness probes and restarts the pod when status is not 200
+ */
 app.get('/status', (req, res) => {
     if(APP_STATUS === 'ok') {
         res.status(200)
