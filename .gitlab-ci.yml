@@ -1,0 +1,71 @@
+image: degola/dind
+
+services:
+  - degola/dind
+
+stages:
+  - build
+  - deploy
+
+before_script:
+  - export VERSION=v`date +%Y%m%d`-`echo "$CI_COMMIT_SHA" | head -c7`
+
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE/kb-discord-bot:$CI_COMMIT_SHA
+  IMAGE_TAG_LATEST: $CI_REGISTRY_IMAGE/kb-discord-bot:latest
+  MANIFEST_PATH: ./k8s/manifest.yml
+
+####################################
+# BUILD CONTAINERS
+create realtime trade collector docker image:
+  stage: build
+  script:
+    - echo "Login Docker"
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - echo "Build Docker Image"
+    - docker build -t $IMAGE_TAG -f ./Dockerfile .
+    - docker tag $IMAGE_TAG $IMAGE_TAG_LATEST
+    - docker push $IMAGE_TAG
+    - docker push $IMAGE_TAG_LATEST
+  only:
+    - main
+    - staging
+    - develop
+
+
+####################################
+# PRODUCTION DEPLOYMENT
+
+# SECRETS
+deploy environment secrets to production env:
+  stage: deploy
+  image: alpine/k8s:1.24.10
+  variables:
+    ENVIRONMENT: xwars-original
+    SECRETS_MANIFEST_PATH: ./k8s/secrets.yaml
+  script:
+    - echo "preparing for release $VERSION"
+    - echo "Deploy new secrets to $ENVIRONMENT"
+    - apk update && apk add gettext docker
+    - echo "deploy to k8s server $K8S_SERVER with token $K8S_TOKEN"
+    # first clean up existing secrets
+    - envsubst < $SECRETS_MANIFEST_PATH | kubectl -s $K8S_SERVER --token $K8S_TOKEN delete -f - || true
+    # redeploy secrets
+    - envsubst < $SECRETS_MANIFEST_PATH | kubectl -s $K8S_SERVER --token $K8S_TOKEN apply -f -
+  only:
+    - main
+
+deploy kb discord bot to production env:
+  stage: deploy
+  image: alpine/k8s:1.24.10
+  variables:
+    ENVIRONMENT: xwars-original
+  script:
+    - echo "preparing for release $VERSION"
+    - echo "Deploy to $ENVIRONMENT"
+    - apk update && apk add gettext docker
+    - envsubst < $MANIFEST_PATH
+    - echo "deploy to k8s server $K8S_SERVER with token $K8S_TOKEN"
+    - envsubst < $MANIFEST_PATH | kubectl -s $K8S_SERVER --token $K8S_TOKEN apply -f -
+  only:
+    - main

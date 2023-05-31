@@ -1,0 +1,105 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: battle-report-parser
+  namespace: ${ENVIRONMENT}
+spec:
+  selector:
+    matchLabels:
+      app: battle-report-parser
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: battle-report-parser
+    spec:
+      imagePullSecrets:
+        - name: gitlab-registry-credentials
+      volumes:
+        - name: battle-report-pvc
+          persistentVolumeClaim:
+            claimName: battle-report-pvc
+      containers:
+        - name: battle-report-parser
+          resources:
+            limits:
+              cpu: 1000m
+            requests:
+              cpu: 1000m
+          image: ${IMAGE_TAG}
+          volumeMounts:
+            - name: battle-report-pvc
+              mountPath: /app/reports/
+          # liveness probe
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: HTTP_PORT
+              value: "3000"
+            - name: DISCORD_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: battle-report-parser
+                  key: DISCORD_BOT_TOKEN
+            - name: DISCORD_BOT_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: battle-report-parser
+                  key: DISCORD_BOT_CLIENT_ID
+            - name: DISCORD_GUILD_ID
+              valueFrom:
+                secretKeyRef:
+                  name: battle-report-parser
+                  key: DISCORD_GUILD_ID
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: battle-report-pvc
+  namespace: ${ENVIRONMENT}
+  labels:
+    app: battle-report-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: longhorn
+  volumeMode: Filesystem
+
+
+---
+# service for kb-discord-bot express server
+kind: Service
+apiVersion: v1
+metadata:
+  name: battle-report-server
+  namespace: ${ENVIRONMENT}
+spec:
+  selector:
+    app: battle-report-parser
+  ports:
+    - port: 3000
+      targetPort: 3000
+
+---
+# ingress for kb-discord-bot express server
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: battle-report-ingress
+  namespace: ${ENVIRONMENT}
+spec:
+  rules:
+    - host: "kb.original.xwars.net"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: battle-report-server
+                port:
+                  number: 3000

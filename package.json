@@ -1,0 +1,26 @@
+{
+  "name": "kb-discord-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "bot": "node deploy-commands.js && node app.js",
+    "deploy-commands": "node deploy-commands.js",
+    "dev": "nodemon app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.4.0",
+    "body-parser": "^1.20.2",
+    "discord.js": "^14.11.0",
+    "dotenv": "^16.1.2",
+    "eris": "^0.17.2",
+    "express": "^4.18.2",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
