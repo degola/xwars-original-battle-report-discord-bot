@@ -31,7 +31,12 @@ spec:
           volumeMounts:
             - name: battle-report-pvc
               mountPath: /app/reports/
-          # liveness probe
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
           env:
             - name: NODE_ENV
               value: "production"
