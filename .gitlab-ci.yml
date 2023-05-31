@@ -17,7 +17,7 @@ variables:
 
 ####################################
 # BUILD CONTAINERS
-create realtime trade collector docker image:
+create kb discord bot docker image:
   stage: build
   script:
     - echo "Login Docker"
@@ -42,7 +42,7 @@ deploy environment secrets to production env:
   image: alpine/k8s:1.24.10
   variables:
     ENVIRONMENT: xwars-original
-    SECRETS_MANIFEST_PATH: ./k8s/secrets.yaml
+    SECRETS_MANIFEST_PATH: ./k8s/secrets.yml
   script:
     - echo "preparing for release $VERSION"
     - echo "Deploy new secrets to $ENVIRONMENT"
