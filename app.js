@@ -242,13 +242,14 @@ app.get('/report', async (req, res) => {
         res.status(401)
         return res.send({'status': 'access denied, invalid token'})
     }
-    console.log('header', req.headers)
     const reportUrl = req.query.url
+    console.log('received report url via HTTP request', reportUrl)
     try {
         const {text, finalReportUrl} = await generateReportText(reportUrl, '__**X-Wars Original News Agency:**__')
         console.log('x-wars server shared report url', reportUrl, 'as', finalReportUrl)
         await client.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)
     } catch(e) {
+        console.log('got error while trying to share report via HTTP request', e, reportUrl)
         res.status(500)
         return res.send({'status': 'error while sharing report, check url'})
     }
