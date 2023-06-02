@@ -10,6 +10,12 @@ module.exports = {
                 .setDescription('battle report url')
                 .setRequired(true)
         )
+        .addBooleanOption(
+            option => option
+                .setName('pm')
+                .setDescription('send the battle report just as private response')
+                .setRequired(false)
+        )
     ,
     async execute(interaction) {
         await interaction.reply('KB!');

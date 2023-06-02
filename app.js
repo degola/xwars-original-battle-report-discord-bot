@@ -66,6 +66,12 @@ client.on(Events.InteractionCreate, async interaction => {
     switch(interaction.commandName) {
         case 'kb':
             const reportUrl = interaction.options.get('url').value
+            const pmOnlyOption = interaction.options.get('pm')
+            let pmOnly = false
+            if(pmOnlyOption) {
+                if(pmOnlyOption && pmOnlyOption.value === true)
+                    pmOnly = true
+            }
             if (!reportUrl.match(/^https:\/\/original.xwars.net\/reports\/(index\.php|)\?id=(.*)/))
                 return interaction.reply({
                     content: 'sorry, the url provided is not a valid battle report url',
@@ -205,8 +211,8 @@ ${fleetLostResponse}
 ${resultResponse}`
 
             // don't send messages to public channel in DEBUG mode
-            console.log('shared report url', reportUrl, 'as', finalReportUrl)
-            if(DEBUG) {
+            console.log('shared report url', reportUrl, 'as', finalReportUrl, 'pm-only?', pmOnly)
+            if(DEBUG || pmOnly) {
                 return interaction.reply({content: text, ephemeral: true })
             }
             await client.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)
