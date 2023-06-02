@@ -127,7 +127,7 @@ async function generateReportText(reportUrl, user, interaction) {
     const defenderMP = calculateMP(defender.at, defender.de).toFixed(1)
     let resultResponse = ''
     if (parsedJsonData.loot.info.atter_couldloot) {
-        if(parsedJsonData.loot.values) {
+        if(parsedJsonData.loot.values && Object.values(parsedJsonData.loot.values).some(v => v > 0)) {
             resultResponse = '**Attacker won and looted ' +
                 Object.values(parsedJsonData.loot.values)
                     .map((v) => v && v.toLocaleString())
