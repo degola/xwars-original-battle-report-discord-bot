@@ -57,6 +57,11 @@ spec:
                 secretKeyRef:
                   name: battle-report-parser
                   key: DISCORD_GUILD_ID
+            - name: REPORT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: battle-report-parser
+                  key: REPORT_TOKEN
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
