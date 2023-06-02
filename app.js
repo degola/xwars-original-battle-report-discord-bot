@@ -194,7 +194,8 @@ ${defenderResponsePart}
     const defenderAlliance = parsedJsonData.parties.defender.planet.alliance ? '[' + parsedJsonData.parties.defender.planet.alliance + '] ' : ''
     return {
         finalReportUrl: finalReportUrl,
-        text: `${user} shared a battle report: ${finalReportUrl}
+        text: `-----------------------------------------------------------------------------------------------------------
+${user} shared a battle report: ${finalReportUrl}
 
 **Attacker:** ${attackerAlliance}${parsedJsonData.parties.attacker.planet.user_alias} with **${attacker.cn.toLocaleString()}** ships and **${attackerMP}mp** (${attacker.at.toLocaleString()}/${attacker.de.toLocaleString()})
 **Defender:** ${defenderAlliance}${parsedJsonData.parties.defender.planet.user_alias} with **${defender.cn.toLocaleString()}** ships/defense units and **${defenderMP}mp** (${defender.at.toLocaleString()}/${defender.de.toLocaleString()})
