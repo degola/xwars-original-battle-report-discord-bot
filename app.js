@@ -66,7 +66,7 @@ client.on(Events.InteractionCreate, async interaction => {
     switch(interaction.commandName) {
         case 'kb':
             const reportUrl = interaction.options.get('url').value
-            const pmOnlyOption = interaction.options.get('pm')
+            const pmOnlyOption = interaction.options.get('private')
             let pmOnly = false
             if(pmOnlyOption) {
                 if(pmOnlyOption && pmOnlyOption.value === true)

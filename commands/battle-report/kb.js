@@ -12,7 +12,7 @@ module.exports = {
         )
         .addBooleanOption(
             option => option
-                .setName('pm')
+                .setName('private')
                 .setDescription('send the battle report just as private response')
                 .setRequired(false)
         )
