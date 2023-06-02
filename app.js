@@ -160,7 +160,7 @@ async function generateReportText(reportUrl, user, interaction) {
             if(defenderItems.filter(v => v.survived === true).length > 0) {
                 defenderResponsePart = `Defender lost some units but ${survivedMP.toFixed(1)}mp (${survivedMPPercent}%) survived :face_holding_back_tears:.`
             } else {
-                defenderResponsePart = `Defender lost all units (${survivedMP.toFixed(1)}mp) :sob:.`
+                defenderResponsePart = `Defender lost all units (${fightingMP.toFixed(1)}mp) :sob:.`
             }
         }
         let attackerResponsePart = attackerItems
@@ -180,7 +180,7 @@ async function generateReportText(reportUrl, user, interaction) {
                 attackerResponsePart = `Attacker lost some units but ${survivedMP.toFixed(1)}mp (${survivedMPPercent}%) survived :piñata:.`
             }
         } else {
-            attackerResponsePart = `Attacker lost all units (${survivedMP.toFixed(1)}mp) :sob:.`
+            attackerResponsePart = `Attacker lost all units (${fightingMP.toFixed(1)}mp) :sob:.`
         }
 
         fleetLostResponse = `
