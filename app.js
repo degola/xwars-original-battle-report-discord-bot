@@ -1,5 +1,6 @@
 require('dotenv').config()
 
+const DEBUG = process.env.DEBUG || false
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
 const HTTP_PORT = parseInt(process.env.HTTP_PORT || 3000)
 const REPORT_URL_BASE = process.env.REPORT_URL_BASE || 'https://kb.original.xwars.net/'
@@ -33,6 +34,9 @@ function battleReportDataReducer(accumulator, currentObject) {
 
     // Return the updated accumulator
     return accumulator;
+}
+function calculateMP(att, def) {
+    return (att + def) / 200
 }
 
 // Create a new client instance
@@ -92,7 +96,11 @@ client.on(Events.InteractionCreate, async interaction => {
                     ephemeral: true
                 })
             const parsedJsonData = JSON.parse(jsonData[1])
-
+            const fleetLostData = reportContent.data.match(/JSON2:(.*)/)
+            let fleetLostDataParsed = null
+            if(fleetLostData) {
+                fleetLostDataParsed = JSON.parse(fleetLostData[1])
+            }
             let cleanedReportContent = reportContent.data
                 .replace(/<!--.*-->/g, '')
                 .replace(/JSON:.*/g, 'json report data reduced for anonymity')
@@ -118,17 +126,72 @@ client.on(Events.InteractionCreate, async interaction => {
 
             const attacker = Object.values(parsedJsonData.ships.g.att)
                 .reduce(battleReportDataReducer, {})
+            const attackerMP = calculateMP(attacker.at, attacker.de).toFixed(1)
             const defender = Object.values(parsedJsonData.ships.g.def)
                 .reduce(battleReportDataReducer, {})
+            const defenderMP = calculateMP(defender.at, defender.de).toFixed(1)
             let resultResponse = ''
             if (parsedJsonData.loot.info.atter_couldloot) {
-                resultResponse = '**Attacker won and looted ' +
-                    Object.values(parsedJsonData.loot.values)
-                        .map((v) => v.toLocaleString())
-                        .join('/') +
-                    ' resources! :tada:**'
+                if(parsedJsonData.loot.values) {
+                    resultResponse = '**Attacker won and looted ' +
+                        Object.values(parsedJsonData.loot.values)
+                            .map((v) => v && v.toLocaleString())
+                            .join('/') +
+                        ' resources! :tada:**'
+                } else {
+                    resultResponse = '**Attacker won :tada: and looted nothing :face_holding_back_tears:!**'
+                }
             } else {
                 resultResponse = '**Defender won! :tada:**'
+            }
+
+            let fleetLostResponse = ''
+            if(fleetLostDataParsed) {
+                const attackerItems = fleetLostDataParsed.filter(v => v.front === 'att')
+                const defenderItems = fleetLostDataParsed.filter(v => v.front === 'def')
+                let defenderResponsePart = ''
+                if(defenderItems.length === 0) {
+                    defenderResponsePart = 'Defender was a chicken and didn\'t engage in the fight but also didn\'t lost any units :chicken:.'
+                } else {
+                    const fightValues = defenderItems
+                        .map(v => v.fight)
+                        .reduce(battleReportDataReducer, {})
+                    const survivedItems = defenderItems
+                        .map(v => v.frest !== '' ? v.frest : {at: 0, de: 0, cn: 0})
+                        .reduce(battleReportDataReducer, {})
+                    const fightingMP = calculateMP(fightValues.at, fightValues.de)
+                    const survivedMP = calculateMP(survivedItems.at, survivedItems.de)
+                    const survivedMPPercent = (survivedMP / fightingMP * 100).toFixed(1)
+                    if(defenderItems.filter(v => v.survived === true).length > 0) {
+                        defenderResponsePart = `Defender lost some units but ${survivedMP.toFixed(1)}mp (${survivedMPPercent}%) survived :face_holding_back_tears:.`
+                    } else {
+                        defenderResponsePart = `Defender lost all units (${survivedMP.toFixed(1)}mp) :sob:.`
+                    }
+                }
+                let attackerResponsePart = attackerItems
+                const fightValues = attackerItems
+                    .map(v => v.fight)
+                    .reduce(battleReportDataReducer, {})
+                const survivedItems = attackerItems
+                    .map(v => v.frest !== '' ? v.frest : {at: 0, de: 0, cn: 0})
+                    .reduce(battleReportDataReducer, {})
+                const fightingMP = calculateMP(fightValues.at, fightValues.de)
+                const survivedMP = calculateMP(survivedItems.at, survivedItems.de)
+                const survivedMPPercent = (survivedMP / fightingMP * 100).toFixed(1)
+                if(attackerItems.filter(v => v.survived === true).length > 0) {
+                    if (survivedMPPercent === '100.0') {
+                        attackerResponsePart = `Attacker lost nothing :confetti_ball:.`
+                    } else {
+                        attackerResponsePart = `Attacker lost some units but ${survivedMP.toFixed(1)}mp (${survivedMPPercent}%) survived :piñata:.`
+                    }
+                } else {
+                    attackerResponsePart = `Attacker lost all units (${survivedMP.toFixed(1)}mp) :sob:.`
+                }
+
+                fleetLostResponse = `
+${attackerResponsePart}
+${defenderResponsePart}
+                `
             }
 
             const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
@@ -136,13 +199,17 @@ client.on(Events.InteractionCreate, async interaction => {
             const defenderAlliance = parsedJsonData.parties.defender.planet.alliance ? '[' + parsedJsonData.parties.defender.planet.alliance + '] ' : ''
             const text = `${interaction.user.toString()} shared a battle report: ${finalReportUrl}
 
-**Attacker:** ${attackerAlliance}${parsedJsonData.parties.attacker.planet.user_alias} with **${attacker.cn.toLocaleString()}** ships (${attacker.at.toLocaleString()}/${attacker.de.toLocaleString()})
-**Defender:** ${defenderAlliance}${parsedJsonData.parties.defender.planet.user_alias} with **${defender.cn.toLocaleString()}** ships/defense units (${defender.at.toLocaleString()}/${defender.de.toLocaleString()})
-
+**Attacker:** ${attackerAlliance}${parsedJsonData.parties.attacker.planet.user_alias} with **${attacker.cn.toLocaleString()}** ships and **${attackerMP}mp** (${attacker.at.toLocaleString()}/${attacker.de.toLocaleString()})
+**Defender:** ${defenderAlliance}${parsedJsonData.parties.defender.planet.user_alias} with **${defender.cn.toLocaleString()}** ships/defense units and **${defenderMP}mp** (${defender.at.toLocaleString()}/${defender.de.toLocaleString()})
+${fleetLostResponse}
 ${resultResponse}`
 
-            await client.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)
+            // don't send messages to public channel in DEBUG mode
             console.log('shared report url', reportUrl, 'as', finalReportUrl)
+            if(DEBUG) {
+                return interaction.reply({content: text, ephemeral: true })
+            }
+            await client.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)
             await interaction.reply({
                 content: `Battle report shared as ${finalReportUrl} in channel ${client.channels.cache.find(channel => channel.name.match(/battle-reports/)).toString()}`,
                 ephemeral: true

@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "bot": "node deploy-commands.js && node app.js",
     "deploy-commands": "node deploy-commands.js",
-    "dev": "nodemon app.js"
+    "dev": "DEBUG=true nodemon app.js"
   },
   "author": "",
   "license": "ISC",
