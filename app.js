@@ -39,7 +39,7 @@ function battleReportDataReducer(accumulator, currentObject) {
 function calculateMP(att, def) {
     return (att + def) / 200
 }
-g
+
 async function generateReportText(reportUrl, user, interaction) {
     if (!reportUrl.match(/^https:\/\/original.xwars.net\/reports\/(index\.php|)\?id=(.*)/))
         return interaction && interaction.reply({
