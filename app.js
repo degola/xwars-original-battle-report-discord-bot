@@ -200,7 +200,7 @@ ${defenderResponsePart}
 **Defender:** ${defenderAlliance}${parsedJsonData.parties.defender.planet.user_alias} with **${defender.cn.toLocaleString()}** ships/defense units and **${defenderMP}mp** (${defender.at.toLocaleString()}/${defender.de.toLocaleString()})
 ${fleetLostResponse}
 ${resultResponse}
-${"-".repeat(100)}"}`
+${"-".repeat(100)}`
     }
 }
 
