@@ -146,7 +146,7 @@ async function generateReportText(reportUrl, user, interaction) {
         const defenderItems = fleetLostDataParsed.filter(v => v.front === 'def')
         let defenderResponsePart = ''
         if(defenderItems.length === 0) {
-            defenderResponsePart = 'Defender was a chicken and didn\'t engage in the fight but also didn\'t lost any units :chicken:.'
+            defenderResponsePart = 'Defender was a chicken and didn\'t engage in the fight but also hasn\'t lost any units :chicken:.'
         } else {
             const fightValues = defenderItems
                 .map(v => v.fight)
