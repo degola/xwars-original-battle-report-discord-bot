@@ -9,3 +9,5 @@ The bot is written for NodeJS v18+ and has 2 main files:
 - `app.js`: main application and Discord bot which listens to commands
 - `deploy-commands.js`: deploys the commands configuration to the Discord server based on files in the `commands/` folder
 
+Allow your bot in:
+https://discord.com/api/oauth2/authorize?client_id=&permissions=&scope=bot
