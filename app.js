@@ -40,6 +40,26 @@ function calculateMP(att, def) {
     return (att + def) / 200
 }
 
+// Create a new client instance
+const client = new Client({ intents: [GatewayIntentBits.Guilds] })
+
+// When the client is ready, run this code (only once)
+client.once(Events.ClientReady, c => {
+    console.log(`Bot is ready! Logged in to Discord as ${c.user.tag}`)
+});
+
+let APP_STATUS = 'ok'
+function discordErrorHandler(error) {
+    console.error('discord error', error)
+    APP_STATUS = 'error'
+}
+client.on(Events.Error, discordErrorHandler);
+client.on(Events.ShardError, discordErrorHandler);
+client.on(Events.ShardDisconnect, discordErrorHandler);
+
+// Log in to Discord with your client's token
+client.login(DISCORD_BOT_TOKEN);
+
 async function generateReportText(reportUrl, user, interaction) {
     if (!reportUrl.match(/^https:\/\/original.xwars.net\/reports\/(index\.php|)\?id=(.*)/))
         return interaction && interaction.reply({
@@ -180,7 +200,7 @@ ${defenderResponsePart}
 **Defender:** ${defenderAlliance}${parsedJsonData.parties.defender.planet.user_alias} with **${defender.cn.toLocaleString()}** ships/defense units and **${defenderMP}mp** (${defender.at.toLocaleString()}/${defender.de.toLocaleString()})
 ${fleetLostResponse}
 ${resultResponse}
-${"-".repeat(100)}`
+${"-".repeat(100)}"}`
     }
 }
 
