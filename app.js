@@ -224,7 +224,7 @@ client.on(Events.InteractionCreate, async interaction => {
             if(DEBUG || pmOnly) {
                 return interaction.reply({content: text, ephemeral: true })
             }
-            await client.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)
+            await interaction.guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)
             await interaction.reply({
                 content: `Battle report shared as ${finalReportUrl} in channel ${client.channels.cache.find(channel => channel.name.match(/battle-reports/)).toString()}`,
                 ephemeral: true
@@ -248,7 +248,7 @@ app.get('/report', async (req, res) => {
     try {
         const {text, finalReportUrl} = await generateReportText(reportUrl, '__**X-Wars Original News Agency:**__')
         console.log('x-wars server shared report url', reportUrl, 'as', finalReportUrl)
-        await client.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)
+        client.guilds.cache.each(async guild => { await guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)})
     } catch(e) {
         console.log('got error while trying to share report via HTTP request', e, reportUrl)
         res.status(500)
