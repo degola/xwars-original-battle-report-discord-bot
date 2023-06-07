@@ -40,6 +40,45 @@ function calculateMP(att, def) {
     return (att + def) / 200
 }
 
+/**
+ * identify a single line with a prefix identifier to extract everything following in that line to get battle report meta data
+ * this is necessary since users started to use JSON:/JSON2: in their user aliases and planet names which broke a
+ * more relaxed/easier implementation
+ *
+ * @param identifier
+ * @param content
+ * @return {boolean|string}
+ */
+function findLineByIdentifier(identifier, content) {
+    const line = content
+        .split(/\n/)
+        .find(
+            v => v.match(new RegExp('^' + identifier + '(.*)$'))
+        )
+    if(line) return line.substring(identifier.length)
+    return false
+}
+/**
+ * identify and remove a single line with a prefix identifier to extract everything following in that line to get battle report meta data
+ * this more complex implementation is necessary since users started to use JSON:/JSON2: in their user aliases and planet names which broke a
+ * more relaxed/easier implementation
+ *
+ * @param identifier
+ * @param content
+ * @return {boolean|string}
+ */
+function cleanContentByIdentifier(identifier, content, stringToReplace) {
+    return content
+        .split(/\n/)
+        .map(v => {
+            if(v.match(new RegExp('^[' + identifier.join('|') + '](.*)$')))
+                return stringToReplace
+            return v
+        })
+        .join('\n')
+}
+
+
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] })
 
@@ -59,16 +98,6 @@ client.on(Events.ShardDisconnect, discordErrorHandler);
 
 // Log in to Discord with your client's token
 client.login(DISCORD_BOT_TOKEN);
-
-function findLineByIdentifier(identifier, content) {
-    const line = content
-        .split(/\n/)
-        .find(
-            v => v.match(new RegExp('^' + identifier + '(.*)$'))
-        )
-    if(line) return line.substr(identifier.length)
-    return false
-}
 
 async function generateReportText(reportUrl, user, interaction) {
     if (!reportUrl.match(/^https:\/\/original.xwars.net\/reports\/(index\.php|)\?id=(.*)/))
@@ -94,25 +123,27 @@ async function generateReportText(reportUrl, user, interaction) {
         })
     }
 
-    const jsonData = findLineByIdentifier('JSON:', reportContent)
+    const jsonData = findLineByIdentifier('JSON:', reportContent.data)
     if (!jsonData)
         return interaction && interaction.reply({
             content: 'sorry, unable to parse the battle report, it\'s too old for this bot :-(.',
             ephemeral: true
         })
     const parsedJsonData = JSON.parse(jsonData)
-    const fleetLostData = findLineByIdentifier('JSON2:', reportContent)
+    const fleetLostData = findLineByIdentifier('JSON2:', reportContent.data)
     let fleetLostDataParsed = null
     if(fleetLostData) {
         fleetLostDataParsed = JSON.parse(fleetLostData)
     }
-    let cleanedReportContent = reportContent.data
+    let cleanedReportContent = cleanContentByIdentifier(
+        ['JSON:', 'JSON2:'],
+        reportContent.data,
+        'json report data reduced for anonymity'
+    )
+    cleanedReportContent = cleanedReportContent
         .replace(/<!--.*-->/g, '')
         .replace(new RegExp([parsedJsonData.parties.attacker.planet.position].join(''), 'g'), 'XxXxX')
         .replace(new RegExp([parsedJsonData.parties.defender.planet.position].join(''), 'g'), 'XxXxX')
-        .replace(/JSON:.*/g, 'json report data reduced for anonymity')
-        .replace(/JSON2:.*/g, 'json report data reduced for anonymity')
-
     if (parsedJsonData.parties.attacker.planet.name.length > 0) {
         cleanedReportContent = cleanedReportContent
             .replace(new RegExp(escapeRegExp(parsedJsonData.parties.attacker.planet.name), 'g'), '')
