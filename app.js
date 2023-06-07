@@ -98,8 +98,8 @@ async function generateReportText(reportUrl, user, interaction) {
     }
     let cleanedReportContent = reportContent.data
         .replace(/<!--.*-->/g, '')
-        .replace(/JSON:.*/g, 'json report data reduced for anonymity')
-        .replace(/JSON2:.*/g, 'json report data reduced for anonymity')
+        .replace(/^JSON:.*/g, 'json report data reduced for anonymity')
+        .replace(/^JSON2:.*/g, 'json report data reduced for anonymity')
         .replace(new RegExp([parsedJsonData.parties.attacker.planet.position].join(''), 'g'), 'XxXxX')
         .replace(new RegExp([parsedJsonData.parties.defender.planet.position].join(''), 'g'), 'XxXxX')
 
