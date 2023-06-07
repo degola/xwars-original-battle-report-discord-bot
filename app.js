@@ -60,6 +60,16 @@ client.on(Events.ShardDisconnect, discordErrorHandler);
 // Log in to Discord with your client's token
 client.login(DISCORD_BOT_TOKEN);
 
+function findLineByIdentifier(identifier, content) {
+    const line = content
+        .split(/\n/)
+        .find(
+            v => v.match(new RegExp('^' + identifier + '(.*)$'))
+        )
+    if(line) return line.substr(identifier.length)
+    return false
+}
+
 async function generateReportText(reportUrl, user, interaction) {
     if (!reportUrl.match(/^https:\/\/original.xwars.net\/reports\/(index\.php|)\?id=(.*)/))
         return interaction && interaction.reply({
@@ -84,24 +94,24 @@ async function generateReportText(reportUrl, user, interaction) {
         })
     }
 
-    const jsonData = reportContent.data.match(/JSON:(.*)/)
+    const jsonData = findLineByIdentifier('JSON:', reportContent)
     if (!jsonData)
         return interaction && interaction.reply({
             content: 'sorry, unable to parse the battle report, it\'s too old for this bot :-(.',
             ephemeral: true
         })
-    const parsedJsonData = JSON.parse(jsonData[1])
-    const fleetLostData = reportContent.data.match(/JSON2:(.*)/)
+    const parsedJsonData = JSON.parse(jsonData)
+    const fleetLostData = findLineByIdentifier('JSON2:', reportContent)
     let fleetLostDataParsed = null
     if(fleetLostData) {
-        fleetLostDataParsed = JSON.parse(fleetLostData[1])
+        fleetLostDataParsed = JSON.parse(fleetLostData)
     }
     let cleanedReportContent = reportContent.data
         .replace(/<!--.*-->/g, '')
-        .replace(/^JSON:.*/g, 'json report data reduced for anonymity')
-        .replace(/^JSON2:.*/g, 'json report data reduced for anonymity')
         .replace(new RegExp([parsedJsonData.parties.attacker.planet.position].join(''), 'g'), 'XxXxX')
         .replace(new RegExp([parsedJsonData.parties.defender.planet.position].join(''), 'g'), 'XxXxX')
+        .replace(/JSON:.*/g, 'json report data reduced for anonymity')
+        .replace(/JSON2:.*/g, 'json report data reduced for anonymity')
 
     if (parsedJsonData.parties.attacker.planet.name.length > 0) {
         cleanedReportContent = cleanedReportContent
