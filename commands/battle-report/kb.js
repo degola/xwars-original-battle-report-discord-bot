@@ -16,6 +16,11 @@ module.exports = {
                 .setDescription('send the battle report just as private response')
                 .setRequired(false)
         )
+        .addStringOption(
+            option => option
+                .setName('format')
+                .setDescription('message format options: text, oneline')
+        )
     ,
     async execute(interaction) {
         await interaction.reply('KB!');

@@ -8,76 +8,13 @@ const REPORT_TOKEN = process.env.REPORT_TOKEN || 'no-token-defined'
 
 if(!DISCORD_BOT_TOKEN) throw new Error('missing required environment variable DISCORD_BOT_TOKEN')
 
-const fs = require('node:fs')
 const express = require('express')
 const { Client, Events, GatewayIntentBits } = require('discord.js')
-const axios = require('axios')
-const uuid = require('uuid').v4
 
 const app = express()
 
-function escapeRegExp(text) {
-    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-}
-
-function battleReportDataReducer(accumulator, currentObject) {
-    // Iterate over each key in the current object
-    for (const key in currentObject) {
-        // Check if the key exists in the accumulator object
-        if (accumulator.hasOwnProperty(key)) {
-            // Add the value to the existing sum for the key
-            accumulator[key] += currentObject[key];
-        } else {
-            // Initialize the sum for the key if it doesn't exist in the accumulator
-            accumulator[key] = currentObject[key];
-        }
-    }
-
-    // Return the updated accumulator
-    return accumulator;
-}
-function calculateMP(att, def) {
-    return (att + def) / 200
-}
-
-/**
- * identify a single line with a prefix identifier to extract everything following in that line to get battle report meta data
- * this is necessary since users started to use JSON:/JSON2: in their user aliases and planet names which broke a
- * more relaxed/easier implementation
- *
- * @param identifier
- * @param content
- * @return {boolean|string}
- */
-function findLineByIdentifier(identifier, content) {
-    const line = content
-        .split(/\n/)
-        .find(
-            v => v.match(new RegExp('^' + identifier + '(.*)$'))
-        )
-    if(line) return line.substring(identifier.length)
-    return false
-}
-/**
- * identify and remove a single line with a prefix identifier to extract everything following in that line to get battle report meta data
- * this more complex implementation is necessary since users started to use JSON:/JSON2: in their user aliases and planet names which broke a
- * more relaxed/easier implementation
- *
- * @param identifier
- * @param content
- * @return {boolean|string}
- */
-function cleanContentByIdentifier(identifier, content, stringToReplace) {
-    return content
-        .split(/\n/)
-        .map(v => {
-            if(v.match(new RegExp('^[' + identifier.join('|') + '](.*)$')))
-                return stringToReplace
-            return v
-        })
-        .join('\n')
-}
-
+const parser = require('./parser.js')
+const message = require('./message.js')
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] })
@@ -99,153 +36,6 @@ client.on(Events.ShardDisconnect, discordErrorHandler);
 // Log in to Discord with your client's token
 client.login(DISCORD_BOT_TOKEN);
 
-async function generateReportText(reportUrl, user, interaction) {
-    if (!reportUrl.match(/^https:\/\/original.xwars.net\/reports\/(index\.php|)\?id=(.*)/))
-        return interaction && interaction.reply({
-            content: 'sorry, the url provided is not a valid battle report url',
-            ephemeral: true
-        })
-    let reportContent = null
-    try {
-        reportContent = await axios.get(reportUrl)
-    } catch (e) {
-        console.log('error while retrieving battle report', e)
-        return interaction && interaction.reply({
-            content: 'sorry, unable to retrieve the battle report, either the url is incorrect or unable to fetch the battle report temporarily, please try again later.',
-            ephemeral: true
-        })
-    }
-    if (!reportContent.data) {
-        console.log('error while retrieving battle report, empty content', e)
-        return interaction && interaction.reply({
-            content: 'sorry, unable to retrieve the battle report, either the url is incorrect or unable to fetch the battle report temporarily, please try again later.',
-            ephemeral: true
-        })
-    }
-
-    const jsonData = findLineByIdentifier('JSON:', reportContent.data)
-    if (!jsonData)
-        return interaction && interaction.reply({
-            content: 'sorry, unable to parse the battle report, it\'s too old for this bot :-(.',
-            ephemeral: true
-        })
-    const parsedJsonData = JSON.parse(jsonData)
-    const fleetLostData = findLineByIdentifier('JSON2:', reportContent.data)
-    let fleetLostDataParsed = null
-    if(fleetLostData) {
-        fleetLostDataParsed = JSON.parse(fleetLostData)
-    }
-    let cleanedReportContent = cleanContentByIdentifier(
-        ['JSON:', 'JSON2:'],
-        reportContent.data,
-        'json report data reduced for anonymity'
-    )
-    cleanedReportContent = cleanedReportContent
-        .replace(/<!--.*-->/g, '')
-        .replace(new RegExp([parsedJsonData.parties.attacker.planet.position].join(''), 'g'), 'XxXxX')
-        .replace(new RegExp([parsedJsonData.parties.defender.planet.position].join(''), 'g'), 'XxXxX')
-    if (parsedJsonData.parties.attacker.planet.name.length > 0) {
-        cleanedReportContent = cleanedReportContent
-            .replace(new RegExp(escapeRegExp(parsedJsonData.parties.attacker.planet.name), 'g'), '')
-    }
-    if (parsedJsonData.parties.defender.planet.name.length > 0) {
-        cleanedReportContent = cleanedReportContent
-            .replace(new RegExp(escapeRegExp(parsedJsonData.parties.defender.planet.name), 'g'), '')
-    }
-
-    const reportId = uuid() + '.html'
-    try {
-        fs.writeFileSync(['./reports/', reportId].join(''), cleanedReportContent)
-    } catch (e) {
-
-    }
-
-    const attacker = Object.values(parsedJsonData.ships.g.att)
-        .reduce(battleReportDataReducer, {})
-    const attackerMP = calculateMP(attacker.at, attacker.de).toFixed(1)
-    const defender = Object.values(parsedJsonData.ships.g.def)
-        .reduce(battleReportDataReducer, {})
-    const defenderMP = calculateMP(defender.at, defender.de).toFixed(1)
-    let resultResponse = ''
-    if (parsedJsonData.loot.info.atter_couldloot) {
-        if(parsedJsonData.loot.values && Object.values(parsedJsonData.loot.values).some(v => v > 0)) {
-            resultResponse = '**Attacker won and looted ' +
-                Object.values(parsedJsonData.loot.values)
-                    .map((v) => v && v.toLocaleString())
-                    .join('/') +
-                ' resources! :tada:**'
-        } else {
-            resultResponse = '**Attacker won :tada: and looted nothing :face_holding_back_tears:!**'
-        }
-    } else {
-        resultResponse = '**Defender won! :tada:**'
-    }
-
-    let fleetLostResponse = ''
-    if(fleetLostDataParsed) {
-        const attackerItems = fleetLostDataParsed.filter(v => v.front === 'att')
-        const defenderItems = fleetLostDataParsed.filter(v => v.front === 'def')
-        let defenderResponsePart = ''
-        if(defenderItems.length === 0) {
-            defenderResponsePart = 'Defender was a chicken and didn\'t engage in the fight but also hasn\'t lost any units :chicken:.'
-        } else {
-            const fightValues = defenderItems
-                .map(v => v.fight)
-                .reduce(battleReportDataReducer, {})
-            const survivedItems = defenderItems
-                .map(v => v.frest !== '' ? v.frest : {at: 0, de: 0, cn: 0})
-                .reduce(battleReportDataReducer, {})
-            const fightingMP = calculateMP(fightValues.at, fightValues.de)
-            const survivedMP = calculateMP(survivedItems.at, survivedItems.de)
-            const survivedMPPercent = (survivedMP / fightingMP * 100).toFixed(1)
-            if(defenderItems.filter(v => v.survived === true).length > 0) {
-                defenderResponsePart = `Defender lost some units but ${survivedMP.toFixed(1)}mp (${survivedMPPercent}%) survived :face_holding_back_tears:.`
-            } else {
-                defenderResponsePart = `Defender lost all units (${fightingMP.toFixed(1)}mp) :sob:.`
-            }
-        }
-        let attackerResponsePart = attackerItems
-        const fightValues = attackerItems
-            .map(v => v.fight)
-            .reduce(battleReportDataReducer, {})
-        const survivedItems = attackerItems
-            .map(v => v.frest !== '' ? v.frest : {at: 0, de: 0, cn: 0})
-            .reduce(battleReportDataReducer, {})
-        const fightingMP = calculateMP(fightValues.at, fightValues.de)
-        const survivedMP = calculateMP(survivedItems.at, survivedItems.de)
-        const survivedMPPercent = (survivedMP / fightingMP * 100).toFixed(1)
-        if(attackerItems.filter(v => v.survived === true).length > 0) {
-            if (survivedMPPercent === '100.0') {
-                attackerResponsePart = `Attacker lost nothing :confetti_ball:.`
-            } else {
-                attackerResponsePart = `Attacker lost some units but ${survivedMP.toFixed(1)}mp (${survivedMPPercent}%) survived :piñata:.`
-            }
-        } else {
-            attackerResponsePart = `Attacker lost all units (${fightingMP.toFixed(1)}mp) :sob:.`
-        }
-
-        fleetLostResponse = `
-${attackerResponsePart}
-${defenderResponsePart}
-                `
-    }
-
-    const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
-    const attackerAlliance = parsedJsonData.parties.attacker.planet.alliance ? '[' + parsedJsonData.parties.attacker.planet.alliance + '] ' : ''
-    const defenderAlliance = parsedJsonData.parties.defender.planet.alliance ? '[' + parsedJsonData.parties.defender.planet.alliance + '] ' : ''
-    return {
-        finalReportUrl: finalReportUrl,
-        text: `${user} shared a battle report: ${finalReportUrl}
-
-**Attacker:** ${attackerAlliance}${parsedJsonData.parties.attacker.planet.user_alias} with **${attacker.cn.toLocaleString()}** ships and **${attackerMP}mp** (${attacker.at.toLocaleString()}/${attacker.de.toLocaleString()})
-**Defender:** ${defenderAlliance}${parsedJsonData.parties.defender.planet.user_alias} with **${defender.cn.toLocaleString()}** ships/defense units and **${defenderMP}mp** (${defender.at.toLocaleString()}/${defender.de.toLocaleString()})
-${fleetLostResponse}
-${resultResponse}
-${"-".repeat(100)}`
-    }
-}
-
-
 client.on(Events.InteractionCreate, async interaction => {
     if(!interaction.isCommand()) return
 
@@ -259,17 +49,40 @@ client.on(Events.InteractionCreate, async interaction => {
                     pmOnly = true
             }
 
-            const {text, finalReportUrl} = await generateReportText(reportUrl, interaction.user.toString(), interaction)
-            // don't send messages to public channel in DEBUG mode
-            console.log('shared report url', reportUrl, 'as', finalReportUrl, 'pm-only?', pmOnly)
-            if(DEBUG || pmOnly) {
-                return interaction.reply({content: text, ephemeral: true })
+            try {
+                const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
+                const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
+                var msgFunction
+                switch(interaction.options.get('format') != null ? interaction.options.get('format').value : '') {
+                    case 'oneline':
+                        msgFunction = message.createOneLineMessage 
+                        break
+                    case 'text':
+                    default:
+                        msgFunction = message.createTextMessage
+                        break
+                }
+                const {text, embed} = msgFunction(data, fleetLostData, finalReportUrl, interaction.user.toString())
+
+                console.log('shared report url', reportUrl, 'as', finalReportUrl, 'pm-only?', pmOnly)
+                if(DEBUG || pmOnly) {
+                    return interaction.reply({content: text, embeds: embed ? [embed] : null, ephemeral: true })
+                }
+                await interaction.guild.channels.cache
+                    .find(channel => channel.name.match(/battle-reports/)).send({content: text, embeds: embed ? [embed] : null})
+                await interaction.reply({
+                    content: `Battle report shared as ${finalReportUrl} in channel ${client.channels.cache.find(channel => channel.name.match(/battle-reports/)).toString()}`,
+                    ephemeral: true
+                })
+            } catch(e) {
+                if(typeof e != 'ParseError')
+                    throw e
+                else
+                    return interaction && interaction.reply({
+                        content: e.message,
+                        ephemeral: true
+                    })
             }
-            await interaction.guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)
-            await interaction.reply({
-                content: `Battle report shared as ${finalReportUrl} in channel ${client.channels.cache.find(channel => channel.name.match(/battle-reports/)).toString()}`,
-                ephemeral: true
-            })
             break;
         default:
             await interaction.reply({content: 'Unknown command', ephemeral: true })
@@ -287,9 +100,11 @@ app.get('/report', async (req, res) => {
     const reportUrl = req.query.url
     console.log('received report url via HTTP request', reportUrl)
     try {
-        const {text, finalReportUrl} = await generateReportText(reportUrl, '__**X-Wars Original News Agency:**__')
+        const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
+        const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
+        const {text, embed} = message.createTextMessage(data, fleetLostData, finalReportUrl, '__**X-Wars Original News Agency:**__')
         console.log('x-wars server shared report url', reportUrl, 'as', finalReportUrl)
-        client.guilds.cache.each(async guild => { await guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)})
+        client.guilds.cache.each(async guild => { await guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send({content: text, embeds: embed ? [embed] : null})})
     } catch(e) {
         console.log('got error while trying to share report via HTTP request', e, reportUrl)
         res.status(500)
