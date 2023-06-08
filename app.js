@@ -52,10 +52,10 @@ client.on(Events.InteractionCreate, async interaction => {
             try {
                 const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
                 const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
-                var msgFunction
+                let msgFunction
                 switch(interaction.options.get('format') != null ? interaction.options.get('format').value : '') {
                     case 'oneline':
-                        msgFunction = message.createOneLineMessage 
+                        msgFunction = message.createOneLineMessage
                         break
                     case 'text':
                     default:
@@ -75,13 +75,14 @@ client.on(Events.InteractionCreate, async interaction => {
                     ephemeral: true
                 })
             } catch(e) {
-                if(typeof e != 'ParseError')
-                    throw e
-                else
+                if(e instanceof parser.ParseError) {
                     return interaction && interaction.reply({
                         content: e.message,
                         ephemeral: true
                     })
+                } else {
+                    throw e
+                }
             }
             break;
         default:

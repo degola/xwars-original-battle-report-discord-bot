@@ -100,8 +100,8 @@ async function parseReport(reportUrl) {
     } catch (e) {
 
     }
-    
-    return {reportId: reportId, data: parsedJsonData, fleetLostData: fleetLostDataParsed}
-}    
 
+    return {reportId: reportId, data: parsedJsonData, fleetLostData: fleetLostDataParsed}
+}
+module.exports.ParseError = ParseError
 module.exports.parseReport = parseReport
