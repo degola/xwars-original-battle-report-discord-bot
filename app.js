@@ -89,7 +89,9 @@ app.get('/report', async (req, res) => {
     const reportUrl = req.query.url
     console.log('received report url via HTTP request', reportUrl)
     try {
-        const {text, finalReportUrl} = await generateReportText(reportUrl, '__**X-Wars Original News Agency:**__')
+        const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
+        const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
+        const {text} = message.createTextMessage(data, fleetLostData, finalReportUrl, '__**X-Wars Original News Agency:**__')
         console.log('x-wars server shared report url', reportUrl, 'as', finalReportUrl)
         client.guilds.cache.each(async guild => { await guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)})
     } catch(e) {
