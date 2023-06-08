@@ -52,13 +52,24 @@ client.on(Events.InteractionCreate, async interaction => {
             try {
                 const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
                 const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
-                const {text} = message.createTextMessage(data, fleetLostData, finalReportUrl, interaction.user.toString())
+                var msgFunction
+                switch(interaction.options.get('format') != null ? interaction.options.get('format').value : '') {
+                    case 'oneline':
+                        msgFunction = message.createOneLineMessage 
+                        break
+                    case 'text':
+                    default:
+                        msgFunction = message.createTextMessage
+                        break
+                }
+                const {text, embed} = msgFunction(data, fleetLostData, finalReportUrl, interaction.user.toString())
 
                 console.log('shared report url', reportUrl, 'as', finalReportUrl, 'pm-only?', pmOnly)
                 if(DEBUG || pmOnly) {
-                    return interaction.reply({content: text, ephemeral: true })
+                    return interaction.reply({content: text, embeds: embed ? [embed] : null, ephemeral: true })
                 }
-                await interaction.guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)
+                await interaction.guild.channels.cache
+                    .find(channel => channel.name.match(/battle-reports/)).send({content: text, embeds: embed ? [embed] : null})
                 await interaction.reply({
                     content: `Battle report shared as ${finalReportUrl} in channel ${client.channels.cache.find(channel => channel.name.match(/battle-reports/)).toString()}`,
                     ephemeral: true
@@ -91,9 +102,9 @@ app.get('/report', async (req, res) => {
     try {
         const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
         const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
-        const {text} = message.createTextMessage(data, fleetLostData, finalReportUrl, '__**X-Wars Original News Agency:**__')
+        const {text, embed} = message.createTextMessage(data, fleetLostData, finalReportUrl, '__**X-Wars Original News Agency:**__')
         console.log('x-wars server shared report url', reportUrl, 'as', finalReportUrl)
-        client.guilds.cache.each(async guild => { await guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send(text)})
+        client.guilds.cache.each(async guild => { await guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send({content: text, embeds: embed ? [embed] : null})})
     } catch(e) {
         console.log('got error while trying to share report via HTTP request', e, reportUrl)
         res.status(500)
