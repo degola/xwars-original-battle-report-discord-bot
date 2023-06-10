@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 const GuildConfigStorage = require('../../guild-config-storage')
 const config = new GuildConfigStorage('guild_config.sqlite3')
@@ -7,6 +7,8 @@ module.exports = {
     data: new SlashCommandBuilder()
     .setName('config')
     .setDescription('Configure the report parser!')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+	.setDMPermission(false)
     .addSubcommand(subcommand =>
         subcommand
         .setName('default_format')
