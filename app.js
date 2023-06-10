@@ -1,5 +1,3 @@
-require('app-module-path/cwd');
-
 require('dotenv').config()
 
 const DEBUG = process.env.DEBUG || false
@@ -18,6 +16,11 @@ const { Client, Collection, Events, GatewayIntentBits } = require('discord.js')
 
 const app = express()
 
+const parser = require('./parser.js')
+const message = require('./message.js')
+const GuildConfigStorage = require('./guild-config-storage')
+const config = new GuildConfigStorage('guild_config.sqlite3')
+
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] })
 
@@ -26,17 +29,17 @@ const foldersPath = path.join(__dirname, 'commands')
 const commandFolders = fs.readdirSync(foldersPath)
 
 for (const folder of commandFolders) {
-	const commandsPath = path.join(foldersPath, folder)
-	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
-	for (const file of commandFiles) {
-		const filePath = path.join(commandsPath, file)
-		const command = require(filePath)
-		if ('data' in command && 'execute' in command) {
-			client.commands.set(command.data.name, command)
-		} else {
-			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`)
-		}
-	}
+    const commandsPath = path.join(foldersPath, folder)
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
+    for (const file of commandFiles) {
+        const filePath = path.join(commandsPath, file)
+        const command = require(filePath)
+        if ('data' in command && 'execute' in command) {
+            client.commands.set(command.data.name, command)
+        } else {
+            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`)
+        }
+    }
 }
 
 // When the client is ready, run this code (only once)
@@ -62,7 +65,7 @@ client.on(Events.InteractionCreate, async interaction => {
     const command = interaction.client.commands.get(interaction.commandName)
 
     if (!command) {
-            await interaction.reply({ content: `No command matching ${interaction.commandName} was found.`, ephemeral: true });
+        await interaction.reply({ content: `No command matching ${interaction.commandName} was found.`, ephemeral: true });
         console.error(`No command matching ${interaction.commandName} was found.`)
         return;
     }
@@ -92,9 +95,26 @@ app.get('/report', async (req, res) => {
     try {
         const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
         const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
-        const {text, embed} = message.createTextMessage(data, fleetLostData, finalReportUrl, '__**X-Wars Original News Agency:**__')
         console.log('x-wars server shared report url', reportUrl, 'as', finalReportUrl)
-        client.guilds.cache.each(async guild => { await guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send({content: text, embeds: embed ? [embed] : null})})
+        const msgText = message.createTextMessage(data, fleetLostData, finalReportUrl, '__**X-Wars Original News Agency:**__')
+
+        const msgOneLine = message.createOneLineMessage(data, fleetLostData, finalReportUrl, '__**X-Wars Original News Agency:**__')
+        client.guilds.cache.each(async guild => 
+            {
+                let text, embed
+                switch(await config.getValue(guild.id, 'default_format_bot') || 'text') {
+                    case 'oneline':
+                        text = msgOneLine.text
+                        embed = msgOneLine.embed
+                        break
+                    case 'text':
+                    default:
+                        text = msgText.text
+                        embed = msgText.embed
+                        break
+                }
+                await guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send({content: text, embeds: embed ? [embed] : null})
+            })
     } catch(e) {
         console.log('got error while trying to share report via HTTP request', e, reportUrl)
         res.status(500)

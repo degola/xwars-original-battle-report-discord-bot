@@ -29,9 +29,6 @@ module.exports = {
                 const format = interaction.options.get('format') ? interaction.options.get('format').value : null
 
                 if(format) {
-                    console.log(interaction.guild.id)
-                    console.log(type)
-                    console.log(format)
                     //Set format
                     config.setValue(interaction.guild.id, `default_format_${type}`, format)
 

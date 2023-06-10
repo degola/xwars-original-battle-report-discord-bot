@@ -9,6 +9,9 @@ const REPORT_TOKEN = process.env.REPORT_TOKEN || 'no-token-defined'
 const parser = require('../../parser.js')
 const message = require('../../message.js')
 
+const GuildConfigStorage = require('../../guild-config-storage')
+const config = new GuildConfigStorage('guild_config.sqlite3')
+
 const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
@@ -46,7 +49,7 @@ module.exports = {
             const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
             const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
             let msgFunction
-            switch(interaction.options.get('format') != null ? interaction.options.get('format').value : '') {
+            switch(interaction.options.get('format') != null ? interaction.options.get('format').value : await config.getValue(interaction.guild.id, 'default_format_user')) {
                 case 'oneline':
                     msgFunction = message.createOneLineMessage
                     break
