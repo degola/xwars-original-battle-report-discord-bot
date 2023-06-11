@@ -31,6 +31,8 @@ spec:
           volumeMounts:
             - name: battle-report-pvc
               mountPath: /app/reports/
+            - name: configuration-storage
+              mountPath: /app/config/
           livenessProbe:
             httpGet:
               path: /status
@@ -76,6 +78,23 @@ spec:
   resources:
     requests:
       storage: 5Gi
+  storageClassName: longhorn
+  volumeMode: Filesystem
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: configuration-storage
+  namespace: ${ENVIRONMENT}
+  labels:
+    app: battle-report-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Mi
   storageClassName: longhorn
   volumeMode: Filesystem
 
