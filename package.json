@@ -5,8 +5,9 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "bot": "node deploy-commands.js && node app.js",
-    "deploy-commands": "node deploy-commands.js",
+    "lint": "eslint src",
+    "bot": "tsc && node dist/deploy-commands.js && node dist/app.js",
+    "deploy-commands": "tsc && node dist/deploy-commands.js",
     "dev": "DEBUG=true nodemon app.js"
   },
   "author": "",
@@ -23,6 +24,11 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "@typescript-eslint/eslint-plugin": "^5.59.9",
+    "@typescript-eslint/parser": "^5.59.9",
+    "eslint": "^8.42.0",
+    "eslint-config-standard-with-typescript": "^35.0.0",
+    "nodemon": "^2.0.22",
+    "typescript": "^5.1.3"
   }
 }
