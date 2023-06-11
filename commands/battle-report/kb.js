@@ -21,7 +21,7 @@ const parser = require('../../parser.js')
 const message = require('../../message.js')
 
 const GuildConfigStorage = require('../../guild-config-storage')
-const config = new GuildConfigStorage('guild_config.sqlite3')
+const config = new GuildConfigStorage()
 
 const { SlashCommandBuilder } = require('discord.js');
 

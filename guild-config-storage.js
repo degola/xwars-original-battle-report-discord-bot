@@ -3,6 +3,10 @@
  * @module
  */
 
+require('dotenv').config()
+
+const GUILD_CONFIG_DATABASE = process.env.GUILD_CONFIG_DATABASE || 'config/guild_config.sqlite3'
+
 const sqlite3 = require('sqlite3')
 const { open } = require('sqlite')
 
@@ -13,13 +17,11 @@ class GuildConfigStorage {
 
     /**
      * Opens the database or creates it if it doesn't exist. Also creates the database scheme if it doesn't exist.
-     *
-     * @param {string} databasePath - The path to the database.
      */
-    constructor(databasePath) {
+    constructor() {
         // Open database
         open({
-            filename: databasePath,
+            filename: GUILD_CONFIG_DATABASE,
             driver: sqlite3.cached.Database
         }).then(db => {
             db.getDatabaseInstance().serialize()

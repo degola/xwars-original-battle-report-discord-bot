@@ -19,7 +19,7 @@ const app = express()
 const parser = require('./parser.js')
 const message = require('./message.js')
 const GuildConfigStorage = require('./guild-config-storage')
-const config = new GuildConfigStorage('guild_config.sqlite3')
+const config = new GuildConfigStorage()
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] })

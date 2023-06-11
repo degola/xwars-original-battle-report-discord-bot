@@ -6,10 +6,11 @@
  *
  *   Sets the default message format for reports parsed by user or bot. <format> is optional. By omitting the format, the current setting will be returned.
  */
+
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 const GuildConfigStorage = require('../../guild-config-storage')
-const config = new GuildConfigStorage('guild_config.sqlite3')
+const config = new GuildConfigStorage()
 
 module.exports = {
     data: new SlashCommandBuilder()
