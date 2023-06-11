@@ -1,5 +1,5 @@
 /**
- * Creating battle report messages 
+ * Creating battle report messages
  *
  * Formats:
  *  - CreateTextMessage: detailed text report
@@ -52,8 +52,8 @@ function mpFromData(data) {
     return calculateMP(at, de)
 }
 
-/** 
- * Formats a number to reduce characters needed to display it. Uses prefixes k and M. Rounds number to one or no decimal places. 
+/**
+ * Formats a number to reduce characters needed to display it. Uses prefixes k and M. Rounds number to one or no decimal places.
  *
  * @param i {number} number to format
  * @returns {string} formated number
@@ -90,7 +90,7 @@ const createTextMessage = (parsedJsonData, fleetLostDataParsed, finalReportUrl, 
     const defender = Object.values(parsedJsonData.ships.g.def)
         .reduce(battleReportDataReducer, {})
     const defenderMP = calculateMP(defender.at, defender.de).toFixed(1)
-    let resultResponse = ''
+    let resultResponse
     if (parsedJsonData.loot.info.atter_couldloot) {
         if(parsedJsonData.loot.values && Object.values(parsedJsonData.loot.values).some(v => v > 0)) {
             resultResponse = '**Attacker won and looted ' +
@@ -109,7 +109,7 @@ const createTextMessage = (parsedJsonData, fleetLostDataParsed, finalReportUrl, 
     if(fleetLostDataParsed) {
         const attackerItems = fleetLostDataParsed.filter(v => v.front === 'att')
         const defenderItems = fleetLostDataParsed.filter(v => v.front === 'def')
-        let defenderResponsePart = ''
+        let defenderResponsePart
         if(defenderItems.length === 0) {
             defenderResponsePart = 'Defender was a chicken and didn\'t engage in the fight but also hasn\'t lost any units :chicken:.'
         } else {
@@ -123,12 +123,16 @@ const createTextMessage = (parsedJsonData, fleetLostDataParsed, finalReportUrl, 
             const survivedMP = calculateMP(survivedItems.at, survivedItems.de)
             const survivedMPPercent = (survivedMP / fightingMP * 100).toFixed(1)
             if(defenderItems.filter(v => v.survived === true).length > 0) {
-                defenderResponsePart = `Defender lost some units but ${survivedMP.toFixed(1)}mp (${survivedMPPercent}%) survived :face_holding_back_tears:.`
+                if((survivedMP / fightingMP) >= 1) {
+                    defenderResponsePart = `Defender with their force of ${survivedMP.toFixed(1)}mp got involved in a hefty battle but was able to strike back successfully without losing anything :tada:.`
+                } else {
+                    defenderResponsePart = `Defender lost some units but ${survivedMP.toFixed(1)}mp (${survivedMPPercent}%) survived :face_holding_back_tears:.`
+                }
             } else {
                 defenderResponsePart = `Defender lost all units (${fightingMP.toFixed(1)}mp) :sob:.`
             }
         }
-        let attackerResponsePart = attackerItems
+        let attackerResponsePart
         const fightValues = attackerItems
             .map(v => v.fight)
             .reduce(battleReportDataReducer, {})
@@ -170,7 +174,7 @@ const createTextMessage = (parsedJsonData, fleetLostDataParsed, finalReportUrl, 
 
 /**
  * Creates a short one-line message
- *  
+ *
  * @param {Map} data - data from the battle report
  * @param {Map} fleetLostData - lost fleet data from the battle report
  * @param {string} finalReportUrl - Url of the anonymised battel report

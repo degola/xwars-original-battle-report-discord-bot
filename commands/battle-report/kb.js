@@ -2,7 +2,7 @@
  *
  * Usage:
  *
- *   /kb <url> <private=True|False> <format=text|oneline> 
+ *   /kb <url> <private=True|False> <format=text|oneline>
  *
  * Accepts a battle report url and publishs it anonymised to the #battle-report channel.
  * Optional parameters:
@@ -12,10 +12,7 @@
 require('dotenv').config()
 
 const DEBUG = process.env.DEBUG || false
-const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
-const HTTP_PORT = parseInt(process.env.HTTP_PORT || 3000)
 const REPORT_URL_BASE = process.env.REPORT_URL_BASE || 'https://kb.original.xwars.net/'
-const REPORT_TOKEN = process.env.REPORT_TOKEN || 'no-token-defined'
 
 const parser = require('../../parser.js')
 const message = require('../../message.js')
@@ -27,28 +24,28 @@ const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-    .setName('kb')
-    .setDescription('Accepts a battle report url and publishs it anonymised to the #battle-report channel.')
-    .setDMPermission(false)
-    .addStringOption(
-        option => option
-        .setName('url')
-        .setDescription('battle report url')
-        .setRequired(true)
-    )
-    .addBooleanOption(
-        option => option
-        .setName('private')
-        .setDescription('send the battle report just as private response')
-        .setRequired(false)
-    )
-    .addStringOption(
-        option => option
-        .setName('format')
-        .addChoices({ name: 'text', value: 'text' }, { name: 'oneline', value: 'oneline' })
-        .setDescription('message format options: text, oneline')
-    )
-    ,
+        .setName('kb')
+        .setDescription('Accepts a battle report url and publishs it anonymised to the #battle-report channel.')
+        .setDMPermission(false)
+        .addStringOption(
+            option => option
+            .setName('url')
+            .setDescription('battle report url')
+            .setRequired(true)
+        )
+        .addBooleanOption(
+            option => option
+            .setName('private')
+            .setDescription('send the battle report just as private response')
+            .setRequired(false)
+        )
+        .addStringOption(
+            option => option
+            .setName('format')
+            .addChoices({ name: 'text', value: 'text' }, { name: 'oneline', value: 'oneline' })
+            .setDescription('message format options: text, oneline')
+            .setRequired(false)
+        ),
     async execute(interaction) {
         const reportUrl = interaction.options.get('url').value
         const pmOnlyOption = interaction.options.get('private')

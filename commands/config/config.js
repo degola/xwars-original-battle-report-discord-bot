@@ -39,16 +39,16 @@ module.exports = {
                 const type = interaction.options.get('type').value
                 const format = interaction.options.get('format') ? interaction.options.get('format').value : null
 
-                if(format) {
+                if (format) {
                     //Set format
                     config.setValue(interaction.guild.id, `default_format_${type}`, format)
 
-                    interaction.reply({content: `Default format for ${type} set to ${format}`, ephemeral: true })
+                    interaction.reply({content: `Default format for ${type} set to ${format}`, ephemeral: true})
                 } else {
                     //Return format
                     const format = await config.getValue(interaction.guild.id, `default_format_${type}`) || 'text'
 
-                    interaction.reply({content: `Default format for ${type} is ${format}`, ephemeral: true })
+                    interaction.reply({content: `Default format for ${type} is ${format}`, ephemeral: true})
                 }
                 break;
             default:
