@@ -1,5 +1,16 @@
+/**
+ * Creating battle report messages 
+ *
+ * Formats:
+ *  - CreateTextMessage: detailed text report
+ *  - CreateOneLineMEssage: short report that fits into one line
+ */
+
 const { EmbedBuilder } = require('discord.js');
 
+/**
+ * Sums up attack and defense values of all ship classes and defense structures.
+ */
 function battleReportDataReducer(accumulator, currentObject) {
     // Iterate over each key in the current object
     for (const key in currentObject) {
@@ -17,10 +28,23 @@ function battleReportDataReducer(accumulator, currentObject) {
     return accumulator;
 }
 
+/**
+ * Calculate military points from attack and defense values
+ *
+ * @param {number} att - attack value
+ * @param {number} def - defense value
+ * @returns {number} military points
+ */
 function calculateMP(att, def) {
     return (att + def) / 200
 }
 
+/**
+ * Calculates total military points for all ship classes and defense structures
+ *
+ * @param data - Map containing attack and defense values for ship classes and defense structures
+ * @returns {number} total military points
+ */
 function mpFromData(data) {
     if(!data)
         return 0
@@ -28,6 +52,12 @@ function mpFromData(data) {
     return calculateMP(at, de)
 }
 
+/** 
+ * Formats a number to reduce characters needed to display it. Uses prefixes k and M. Rounds number to one or no decimal places. 
+ *
+ * @param i {number} number to format
+ * @returns {string} formated number
+ */
 function formatNumber(i) {
     var prefix = ''
     if(i > 1000000) {
@@ -44,6 +74,15 @@ function formatNumber(i) {
     return `${Math.round(i).toLocaleString()}${prefix}`
 }
 
+/**
+ * Creates a detailed text message
+ *
+ * @param {Map} parsedJsonData - data from the battle report
+ * @param {Map} fleetLostDataParsed - lost fleet data from the battle report
+ * @param {string} finalReportUrl - Url of the anonymised battel report
+ * @param {string} user - name of the user who parsed the battle report
+ * @returns {{text: string}} the message in text format
+ */
 const createTextMessage = (parsedJsonData, fleetLostDataParsed, finalReportUrl, user) => {
     const attacker = Object.values(parsedJsonData.ships.g.att)
         .reduce(battleReportDataReducer, {})
@@ -129,6 +168,15 @@ const createTextMessage = (parsedJsonData, fleetLostDataParsed, finalReportUrl, 
 
 }
 
+/**
+ * Creates a short one-line message
+ *  
+ * @param {Map} data - data from the battle report
+ * @param {Map} fleetLostData - lost fleet data from the battle report
+ * @param {string} finalReportUrl - Url of the anonymised battel report
+ * @param {string} user - name of the user who parsed the battle report
+ * @returns {{embed: EmbedBuilder}} the message in embed format
+ */
 const createOneLineMessage = (data, fleetLostData, finalReportUrl, user) => {
     let attacker = data.parties.attacker.planet.user_alias
     let defender = data.parties.defender.planet.user_alias

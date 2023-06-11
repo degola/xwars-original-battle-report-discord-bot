@@ -1,3 +1,11 @@
+/**
+ * SlashCommand /config definition and execution
+ *
+ * Usage:
+ *   /config default_format <tpye=user|bot> <format=text|oneline>
+ *
+ *   Sets the default message format for reports parsed by user or bot. <format> is optional. By omitting the format, the current setting will be returned.
+ */
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 const GuildConfigStorage = require('../../guild-config-storage')

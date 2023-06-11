@@ -1,3 +1,14 @@
+/** SlashCommand /kb definition and execution
+ *
+ * Usage:
+ *
+ *   /kb <url> <private=True|False> <format=text|oneline> 
+ *
+ * Accepts a battle report url and publishs it anonymised to the #battle-report channel.
+ * Optional parameters:
+ *  - private: If True, report will not be published but sent as private message
+ *  - format: Sets report message format
+ */
 require('dotenv').config()
 
 const DEBUG = process.env.DEBUG || false
@@ -34,6 +45,7 @@ module.exports = {
     .addStringOption(
         option => option
         .setName('format')
+        .addChoices({ name: 'text', value: 'text' }, { name: 'oneline', value: 'oneline' })
         .setDescription('message format options: text, oneline')
     )
     ,
