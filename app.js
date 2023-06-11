@@ -8,16 +8,39 @@ const REPORT_TOKEN = process.env.REPORT_TOKEN || 'no-token-defined'
 
 if(!DISCORD_BOT_TOKEN) throw new Error('missing required environment variable DISCORD_BOT_TOKEN')
 
+const fs = require('node:fs')
+const path = require('node:path')
+
 const express = require('express')
-const { Client, Events, GatewayIntentBits } = require('discord.js')
+const { Client, Collection, Events, GatewayIntentBits } = require('discord.js')
 
 const app = express()
 
 const parser = require('./parser.js')
 const message = require('./message.js')
+const GuildConfigStorage = require('./guild-config-storage')
+const config = new GuildConfigStorage()
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] })
+
+client.commands = new Collection()
+const foldersPath = path.join(__dirname, 'commands')
+const commandFolders = fs.readdirSync(foldersPath)
+
+for (const folder of commandFolders) {
+    const commandsPath = path.join(foldersPath, folder)
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
+    for (const file of commandFiles) {
+        const filePath = path.join(commandsPath, file)
+        const command = require(filePath)
+        if ('data' in command && 'execute' in command) {
+            client.commands.set(command.data.name, command)
+        } else {
+            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`)
+        }
+    }
+}
 
 // When the client is ready, run this code (only once)
 client.once(Events.ClientReady, c => {
@@ -37,56 +60,25 @@ client.on(Events.ShardDisconnect, discordErrorHandler);
 client.login(DISCORD_BOT_TOKEN);
 
 client.on(Events.InteractionCreate, async interaction => {
-    if(!interaction.isCommand()) return
+    if(!interaction.isChatInputCommand()) return
 
-    switch(interaction.commandName) {
-        case 'kb':
-            const reportUrl = interaction.options.get('url').value
-            const pmOnlyOption = interaction.options.get('private')
-            let pmOnly = false
-            if(pmOnlyOption) {
-                if(pmOnlyOption && pmOnlyOption.value === true)
-                    pmOnly = true
-            }
+    const command = interaction.client.commands.get(interaction.commandName)
 
-            try {
-                const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
-                const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
-                let msgFunction
-                switch(interaction.options.get('format') != null ? interaction.options.get('format').value : '') {
-                    case 'oneline':
-                        msgFunction = message.createOneLineMessage
-                        break
-                    case 'text':
-                    default:
-                        msgFunction = message.createTextMessage
-                        break
-                }
-                const {text, embed} = msgFunction(data, fleetLostData, finalReportUrl, interaction.user.toString())
+    if (!command) {
+        await interaction.reply({ content: `No command matching ${interaction.commandName} was found.`, ephemeral: true });
+        console.error(`No command matching ${interaction.commandName} was found.`)
+        return;
+    }
 
-                console.log('shared report url', reportUrl, 'as', finalReportUrl, 'pm-only?', pmOnly)
-                if(DEBUG || pmOnly) {
-                    return interaction.reply({content: text, embeds: embed ? [embed] : null, ephemeral: true })
-                }
-                await interaction.guild.channels.cache
-                    .find(channel => channel.name.match(/battle-reports/)).send({content: text, embeds: embed ? [embed] : null})
-                await interaction.reply({
-                    content: `Battle report shared as ${finalReportUrl} in channel ${client.channels.cache.find(channel => channel.name.match(/battle-reports/)).toString()}`,
-                    ephemeral: true
-                })
-            } catch(e) {
-                if(e instanceof parser.ParseError) {
-                    return interaction && interaction.reply({
-                        content: e.message,
-                        ephemeral: true
-                    })
-                } else {
-                    throw e
-                }
-            }
-            break;
-        default:
-            await interaction.reply({content: 'Unknown command', ephemeral: true })
+    try {
+        await command.execute(interaction)
+    } catch (error) {
+        console.error(error)
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true })
+        } else {
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true })
+        }
     }
 })
 
@@ -103,9 +95,26 @@ app.get('/report', async (req, res) => {
     try {
         const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
         const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
-        const {text, embed} = message.createTextMessage(data, fleetLostData, finalReportUrl, '__**X-Wars Original News Agency:**__')
         console.log('x-wars server shared report url', reportUrl, 'as', finalReportUrl)
-        client.guilds.cache.each(async guild => { await guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send({content: text, embeds: embed ? [embed] : null})})
+        const msgText = message.createTextMessage(data, fleetLostData, finalReportUrl, '__**X-Wars Original News Agency:**__')
+
+        const msgOneLine = message.createOneLineMessage(data, fleetLostData, finalReportUrl, '__**X-Wars Original News Agency:**__')
+        client.guilds.cache.each(async guild => 
+            {
+                let text, embed
+                switch(await config.getValue(guild.id, 'default_format_bot') || 'text') {
+                    case 'oneline':
+                        text = msgOneLine.text
+                        embed = msgOneLine.embed
+                        break
+                    case 'text':
+                    default:
+                        text = msgText.text
+                        embed = msgText.embed
+                        break
+                }
+                await guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).send({content: text, embeds: embed ? [embed] : null})
+            })
     } catch(e) {
         console.log('got error while trying to share report via HTTP request', e, reportUrl)
         res.status(500)
