@@ -3,17 +3,27 @@
  * @module
  */
 
-require('dotenv').config()
+import 'dotenv/config'
 
 const GUILD_CONFIG_DATABASE = process.env.GUILD_CONFIG_DATABASE || 'config/guild_config.sqlite3'
 
-const sqlite3 = require('sqlite3')
-const { open } = require('sqlite')
+import sqlite3 from 'sqlite3'
+import { open, Database } from 'sqlite'
+import { Snowflake } from 'discord.js'
+
+interface KeyValueRow {
+    key: string,
+    value: string
+}
+
+interface ValueRow {
+    value: string
+}
 
 /** Class representing the guild configuration storage. */
 class GuildConfigStorage {
     /** The database handle */
-    #db
+    #db: Database<sqlite3.Database, sqlite3.Statement> | undefined
 
     /**
      * Opens the database or creates it if it doesn't exist. Also creates the database scheme if it doesn't exist.
@@ -42,16 +52,19 @@ class GuildConfigStorage {
      * @param {Snowflake} guildId - The id of the guild.
      * @returns {Map<string, string> | null} Returns a map of all guild configuration key-value pairs or null if no key exists for the guild.
      */
-    async getConfig(guildId) {
-        const rows = await this.#db.all("SELECT key, value FROM guild_config WHERE guild_id = ?", guildId)
+    async getConfig(guildId: Snowflake) {
+        if(!this.#db) {
+            throw new Error('Database not open yet')
+        }
+        const rows = await this.#db.all<KeyValueRow[]>("SELECT key, value FROM guild_config WHERE guild_id = ?", guildId)
 
         if(rows.length == 0) {
             return null
         }
 
-        const config = {}
-        for(let row of rows) {
-            config[row.key] = row.value
+        const config = new Map<string, string>()
+        for(const row of rows) {
+            config.set(row.key, row.value)
         }
 
         return config
@@ -64,8 +77,11 @@ class GuildConfigStorage {
      * @param {string} key - The configuration key.
      * @returns {string | null} The configuration value or null if the key ist not set.
      */
-    async getValue(guildId, key) {
-        const row = await this.#db.get("SELECT value FROM guild_config WHERE guild_id = ? AND key = ?", [guildId, key])
+    async getValue(guildId: Snowflake, key: string) {
+        if(!this.#db) {
+            throw new Error('Database not open yet')
+        }
+        const row = await this.#db.get<ValueRow>("SELECT value FROM guild_config WHERE guild_id = ? AND key = ?", [guildId, key])
 
         if( !row ) {
             return null
@@ -81,7 +97,10 @@ class GuildConfigStorage {
      * @param {string} key - The configuration key.
      * @param {string} value - The configuration value.
      */
-    setValue(guildId, key, value) {
+    setValue(guildId: Snowflake, key: string, value: string) {
+        if(!this.#db) {
+            throw new Error('Database not open yet')
+        }
         this.#db.run("INSERT OR REPLACE INTO guild_config (guild_id, key, value) VALUES (?, ?, ?)", [guildId, key, value])
     }
 }
