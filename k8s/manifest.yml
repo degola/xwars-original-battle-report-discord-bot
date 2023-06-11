@@ -20,6 +20,9 @@ spec:
         - name: battle-report-pvc
           persistentVolumeClaim:
             claimName: battle-report-pvc
+        - name: battle-report-configuration-storage-pvc
+          persistentVolumeClaim:
+            claimName: battle-report-configuration-storage-pvc
       containers:
         - name: battle-report-parser
           resources:
@@ -31,7 +34,7 @@ spec:
           volumeMounts:
             - name: battle-report-pvc
               mountPath: /app/reports/
-            - name: configuration-storage
+            - name: battle-report-configuration-storage-pvc
               mountPath: /app/config/
           livenessProbe:
             httpGet:
@@ -85,10 +88,10 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: configuration-storage
+  name: battle-report-configuration-storage-pvc
   namespace: ${ENVIRONMENT}
   labels:
-    app: battle-report-pvc
+    app: battle-report-configuration-storage-pvc
 spec:
   accessModes:
     - ReadWriteMany
