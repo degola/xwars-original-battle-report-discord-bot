@@ -9,87 +9,145 @@
  *  - private: If True, report will not be published but sent as private message
  *  - format: Sets report message format
  */
-require('dotenv').config()
+import "dotenv/config";
 
-const DEBUG = process.env.DEBUG || false
-const REPORT_URL_BASE = process.env.REPORT_URL_BASE || 'https://kb.original.xwars.net/'
+const DEBUG = process.env.DEBUG || false;
+const REPORT_URL_BASE =
+  process.env.REPORT_URL_BASE || "https://kb.original.xwars.net/";
 
-const parser = require('../../parser.js')
-const message = require('../../message.js')
+import { Command } from "../../command";
 
-const GuildConfigStorage = require('../../guild-config-storage')
-const config = new GuildConfigStorage()
+import * as parser from "../../parser";
+import * as message from "../../message";
 
-const { SlashCommandBuilder } = require('discord.js');
+import { GuildConfigStorage } from "../../guild-config-storage";
+const config = new GuildConfigStorage();
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('kb')
-        .setDescription('Accepts a battle report url and publishs it anonymised to the #battle-report channel.')
-        .setDMPermission(false)
-        .addStringOption(
-            option => option
-            .setName('url')
-            .setDescription('battle report url')
-            .setRequired(true)
-        )
-        .addBooleanOption(
-            option => option
-            .setName('private')
-            .setDescription('send the battle report just as private response')
-            .setRequired(false)
-        )
-        .addStringOption(
-            option => option
-            .setName('format')
-            .addChoices({ name: 'text', value: 'text' }, { name: 'oneline', value: 'oneline' })
-            .setDescription('message format options: text, oneline')
-            .setRequired(false)
-        ),
-    async execute(interaction) {
-        const reportUrl = interaction.options.get('url').value
-        const pmOnlyOption = interaction.options.get('private')
-        let pmOnly = false
-        if(pmOnlyOption) {
-            if(pmOnlyOption && pmOnlyOption.value === true)
-                pmOnly = true
-        }
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  TextChannel,
+} from "discord.js";
 
-        try {
-            const {reportId, data, fleetLostData} = await parser.parseReport(reportUrl)
-            const finalReportUrl = [REPORT_URL_BASE, reportId].join('')
-            let msgFunction
-            switch(interaction.options.get('format') != null ? interaction.options.get('format').value : await config.getValue(interaction.guild.id, 'default_format_user')) {
-                case 'oneline':
-                    msgFunction = message.createOneLineMessage
-                    break
-                case 'text':
-                default:
-                    msgFunction = message.createTextMessage
-                    break
-            }
-            const {text, embed} = msgFunction(data, fleetLostData, finalReportUrl, interaction.user.toString())
+const builder = new SlashCommandBuilder();
+builder
+  .setName("kb")
+  .setDescription(
+    "Accepts a battle report url and publishs it anonymised to the #battle-report channel."
+  )
+  .setDMPermission(false)
+  .addStringOption((option) =>
+    option.setName("url").setDescription("battle report url").setRequired(true)
+  )
+  .addBooleanOption((option) =>
+    option
+      .setName("private")
+      .setDescription("send the battle report just as private response")
+      .setRequired(false)
+  )
+  .addStringOption((option) =>
+    option
+      .setName("format")
+      .addChoices(
+        { name: "text", value: "text" },
+        { name: "oneline", value: "oneline" }
+      )
+      .setDescription("message format options: text, oneline")
+      .setRequired(false)
+  );
 
-            console.log('shared report url', reportUrl, 'as', finalReportUrl, 'pm-only?', pmOnly)
-            if(DEBUG || pmOnly) {
-                return interaction.reply({content: text, embeds: embed ? [embed] : null, ephemeral: true })
-            }
-            await interaction.guild.channels.cache
-                .find(channel => channel.name.match(/battle-reports/)).send({content: text, embeds: embed ? [embed] : null})
-            await interaction.reply({
-                content: `Battle report shared as ${finalReportUrl} in channel ${interaction.guild.channels.cache.find(channel => channel.name.match(/battle-reports/)).toString()}`,
-                ephemeral: true
-            })
-        } catch(e) {
-            if(e instanceof parser.ParseError) {
-                return interaction && interaction.reply({
-                    content: e.message,
-                    ephemeral: true
-                })
-            } else {
-                throw e
-            }
-        }
+const command = async (
+  interaction: ChatInputCommandInteraction
+): Promise<void> => {
+  const reportUrl = interaction.options.get("url")?.value?.toString();
+  if (reportUrl == undefined) {
+    throw new Error("no report url");
+  }
 
-    },
+  const pmOnlyOption = interaction.options.get("private");
+  let pmOnly = false;
+  if (pmOnlyOption) {
+    if (pmOnlyOption && pmOnlyOption.value === true) pmOnly = true;
+  }
+
+  const guild = interaction.guild;
+  if (guild == undefined) {
+    throw new Error("no guild found");
+  }
+
+  const format =
+    interaction.options.get("format")?.value?.toString() ||
+    (await config.getValue(guild.id, "default_format_user"));
+
+  try {
+    const { reportId, data } = await parser.parseReport(
+      reportUrl
+    );
+    const finalReportUrl = [REPORT_URL_BASE, reportId].join("");
+    let msgFunction;
+    switch (format) {
+      case "oneline":
+        msgFunction = message.createOneLineMessage;
+        break;
+      case "text":
+      default:
+        msgFunction = message.createTextMessage;
+        break;
+    }
+    const { text, embed } = msgFunction(
+      data,
+      finalReportUrl,
+      interaction.user.toString()
+    );
+
+    console.log(
+      "shared report url",
+      reportUrl,
+      "as",
+      finalReportUrl,
+      "pm-only?",
+      pmOnly
+    );
+    if (DEBUG || pmOnly) {
+      interaction.reply({
+        content: text,
+        embeds: embed ? [embed] : undefined,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const cache = guild.channels.cache;
+    if (cache == undefined) {
+      throw Error("no channels found");
+    }
+    const channel = cache.find((channel) =>
+      channel.name.match(/battle-reports/)
+    );
+    if (channel == undefined) {
+      throw new Error("batte reports channel not found");
+    }
+    if (channel instanceof TextChannel) {
+      await channel.send({
+        content: text,
+        embeds: embed ? [embed] : undefined,
+      });
+    }
+    await interaction.reply({
+      content: `Battle report shared as ${finalReportUrl} in channel ${channel.toString()}`,
+      ephemeral: true,
+    });
+  } catch (e) {
+    if (e instanceof parser.ParseError) {
+      interaction.reply({
+        content: e.message,
+        ephemeral: true,
+      });
+      return;
+    } else {
+      throw e;
+    }
+  }
 };
+
+module.exports = new Command(builder, command);
