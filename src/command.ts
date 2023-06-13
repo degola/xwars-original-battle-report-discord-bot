@@ -3,13 +3,13 @@
  */
 
 import {
-  Collection,
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-} from "discord.js";
+    Collection,
+    SlashCommandBuilder,
+    ChatInputCommandInteraction,
+} from "discord.js"
 
-import fs from "node:fs";
-import path from "node:path";
+import fs from "node:fs"
+import path from "node:path"
 
 /**
  * Represents a slash command. Consists of a SlashCommandBuilder used to
@@ -17,24 +17,24 @@ import path from "node:path";
  * file must export a instance of this class.
  */
 export class Command {
-  /** The SlashCommandBuilder used to deploy the command */
-  data: SlashCommandBuilder;
-  /** The function used to execute the command */
-  execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
-
-  /**
-   * Default constructor
-   *
-   * @param data - The SlashCommandBuilder used to deploy the command
-   * @param execute - The function used to execute the command
-   */
-  constructor(
-    data: SlashCommandBuilder,
+    /** The SlashCommandBuilder used to deploy the command */
+    data: SlashCommandBuilder
+    /** The function used to execute the command */
     execute: (interaction: ChatInputCommandInteraction) => Promise<void>
-  ) {
-    this.data = data;
-    this.execute = execute;
-  }
+
+    /**
+     * Default constructor
+     *
+     * @param data - The SlashCommandBuilder used to deploy the command
+     * @param execute - The function used to execute the command
+     */
+    constructor(
+        data: SlashCommandBuilder,
+        execute: (interaction: ChatInputCommandInteraction) => Promise<void>
+    ) {
+        this.data = data
+        this.execute = execute
+    }
 }
 
 /**
@@ -42,65 +42,65 @@ export class Command {
  * from subfolders of the foldersPath folder and stores the commands.
  */
 export class CommandManager implements Iterable<Command> {
-  /** stores all promises to the commands */
-  #promises = new Array<Promise<Command>>();
-  /** Collection of commands */
-  #commands = new Collection<string, Command>();
+    /** stores all promises to the commands */
+    #promises = new Array<Promise<Command>>()
+    /** Collection of commands */
+    #commands = new Collection<string, Command>()
 
-  /**
-   * Default constructor. Do not use! Commands collection will not be
-   * populated by the time the constructor returns.
-   *
-   * @param foldersPath - Path to the root folder of the commands directory
-   */
-  constructor(foldersPath: string) {
-    const commandFolders = fs.readdirSync(foldersPath);
+    /**
+     * Default constructor. Do not use! Commands collection will not be
+     * populated by the time the constructor returns.
+     *
+     * @param foldersPath - Path to the root folder of the commands directory
+     */
+    constructor(foldersPath: string) {
+        const commandFolders = fs.readdirSync(foldersPath)
 
-    for (const folder of commandFolders) {
-      const commandsPath = path.join(foldersPath, folder);
-      const commandFiles = fs
-        .readdirSync(commandsPath)
-        .filter((file) => file.endsWith(".js"));
+        for (const folder of commandFolders) {
+            const commandsPath = path.join(foldersPath, folder)
+            const commandFiles = fs
+                .readdirSync(commandsPath)
+                .filter((file) => file.endsWith(".js"))
 
-      for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const promise = import(filePath);
-        promise.then((obj) => {
-          const command: Command = obj.default;
-          this.#commands.set(command.data.name, command);
-        });
-        this.#promises.push(promise);
-      }
+            for (const file of commandFiles) {
+                const filePath = path.join(commandsPath, file)
+                const promise = import(filePath)
+                promise.then((obj) => {
+                    const command: Command = obj.default
+                    this.#commands.set(command.data.name, command)
+                })
+                this.#promises.push(promise)
+            }
+        }
     }
-  }
 
-  /**
-   * Constructs CommandManager and waits until all command files are read.
-   * @param foldersPath - Path to the root folder of the commands directory
-   * @returns CommandManager with populated commands collection
-   */
-  public static loadFolder = async (foldersPath: string) => {
-    const manager = new CommandManager(foldersPath);
-    await Promise.all(manager.#promises);
+    /**
+     * Constructs CommandManager and waits until all command files are read.
+     * @param foldersPath - Path to the root folder of the commands directory
+     * @returns CommandManager with populated commands collection
+     */
+    public static loadFolder = async (foldersPath: string) => {
+        const manager = new CommandManager(foldersPath)
+        await Promise.all(manager.#promises)
 
-    return manager;
-  };
+        return manager
+    }
 
-  /**
-   * Returns the command with name name.
-   *
-   * @param name - Command name
-   * @returns Command or undefined if no command is found.
-   */
-  get(name: string): Command | undefined {
-    return this.#commands.get(name);
-  }
+    /**
+     * Returns the command with name name.
+     *
+     * @param name - Command name
+     * @returns Command or undefined if no command is found.
+     */
+    get(name: string): Command | undefined {
+        return this.#commands.get(name)
+    }
 
-  /**
-   * Iterator over all commands used by for..of.
-   * @returns
-   */
-  [Symbol.iterator](): Iterator<Command> {
-    return this.#commands.values();
-  }
+    /**
+     * Iterator over all commands used by for..of.
+     * @returns
+     */
+    [Symbol.iterator](): Iterator<Command> {
+        return this.#commands.values()
+    }
 }

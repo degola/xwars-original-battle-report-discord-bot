@@ -1,6 +1,6 @@
-import { JsonProperty } from "json-object-mapper";
+import { JsonProperty } from "json-object-mapper"
 
 export class ModifierValue {
-  @JsonProperty({ name: "val" })
-  value = 0;
+    @JsonProperty({ name: "val" })
+    value = 0
 }
