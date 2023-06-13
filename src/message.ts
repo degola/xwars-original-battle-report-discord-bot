@@ -9,6 +9,7 @@
 import { EmbedBuilder } from "discord.js";
 import { Data } from "./model/report/Data";
 import { MpType, PartyEnum } from "./model/report/Enums";
+import { Fleet } from "./model/report/Fleet";
 
 /**
  * Formats a number to reduce characters needed to display it. Uses prefixes k and M. Rounds number to one or no decimal places.
@@ -35,12 +36,14 @@ function formatNumber(i: number) {
  * Creates a detailed text message
  *
  * @param data - data from the battle report
+ * @param fleetData - fleet data from the battle report
  * @param finalReportUrl - Url of the anonymised battel report
  * @param user - name of the user who parsed the battle report
  * @returns the message in text format
  */
 const createTextMessage = (
   data: Data,
+  fleetData: Fleet[],
   finalReportUrl: string,
   user: string
 ) => {
@@ -198,6 +201,7 @@ const createOneLineMessage = (data: Data, finalReportUrl: string) => {
  *
  * @param format - format of the message
  * @param data - data from the battle report
+ * @param fleetData - fleet data from the battle report
  * @param finalReportUrl - Url of the anonymised battel report
  * @param user - name of the user who parsed the battle report
  * @returns the message in text format
@@ -205,12 +209,13 @@ const createOneLineMessage = (data: Data, finalReportUrl: string) => {
 export const createMessage = (
   format: string,
   data: Data,
+  fleetData: Fleet[],
   finalReportUrl: string,
   user: string
 ) => {
   switch (format) {
     case "text":
-      return createTextMessage(data, finalReportUrl, user);
+      return createTextMessage(data, fleetData, finalReportUrl, user);
       break;
     case "oneline":
       return createOneLineMessage(data, finalReportUrl);

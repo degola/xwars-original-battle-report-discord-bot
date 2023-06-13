@@ -3,6 +3,7 @@ import { v4 as uuid } from "uuid";
 import fs from "node:fs";
 import { ObjectMapper } from "json-object-mapper";
 import { Data } from "./model/report/Data";
+import { Fleet } from "./model/report/Fleet";
 
 /**
  * The parser will throw this error if the report can't be parsed
@@ -107,6 +108,15 @@ export async function parseReport(reportUrl: string) {
 
   const data = ObjectMapper.deserialize(Data, JSON.parse(jsonData));
 
+  let fleetData: Fleet[] = []
+  const jsonFleetData = findLineByIdentifier("JSON2:", reportContent.data);
+  if (jsonFleetData) {
+    fleetData = ObjectMapper.deserializeArray(
+      Fleet,
+      JSON.parse(jsonFleetData)
+    );
+  }
+
   let cleanedReportContent = cleanContentByIdentifier(
     ["JSON:", "JSON2:"],
     reportContent.data,
@@ -151,5 +161,6 @@ export async function parseReport(reportUrl: string) {
   return {
     reportId: reportId,
     data: data,
+    fleetData: fleetData
   };
 }

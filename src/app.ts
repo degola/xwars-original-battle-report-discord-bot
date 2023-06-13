@@ -119,7 +119,7 @@ import { GuildConfigStorage } from "./guild-config-storage";
       if (typeof reportUrl != "string")
         throw new Error("report url isnt string");
       console.log("received report url via HTTP request", reportUrl);
-      const { reportId, data } = await parser.parseReport(reportUrl);
+      const { reportId, data, fleetData } = await parser.parseReport(reportUrl);
       const finalReportUrl = [REPORT_URL_BASE, reportId].join("");
       console.log(
         "x-wars server shared report url",
@@ -130,6 +130,7 @@ import { GuildConfigStorage } from "./guild-config-storage";
       const msgText = message.createMessage(
         "text",
         data,
+        fleetData,
         finalReportUrl,
         "__**X-Wars Original News Agency:**__"
       );
@@ -137,6 +138,7 @@ import { GuildConfigStorage } from "./guild-config-storage";
       const msgOneLine = message.createMessage(
         "oneline",
         data,
+        fleetData,
         finalReportUrl,
         "__**X-Wars Original News Agency:**__"
       );

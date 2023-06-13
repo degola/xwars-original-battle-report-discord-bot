@@ -81,12 +81,13 @@ const command = async (
     "text";
 
   try {
-    const { reportId, data } = await parser.parseReport(reportUrl);
+    const { reportId, data, fleetData } = await parser.parseReport(reportUrl);
     const finalReportUrl = [REPORT_URL_BASE, reportId].join("");
 
     const { text, embed } = message.createMessage(
       format,
       data,
+      fleetData,
       finalReportUrl,
       interaction.user.toString()
     );
