@@ -6,8 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src",
-    "bot": "tsc && node dist/deploy-commands.js && node dist/app.js",
-    "deploy-commands": "tsc && node dist/deploy-commands.js",
+    "build": "tsc",
+    "bot": "node dist/deploy-commands.js && node dist/app.js",
+    "deploy-commands": "node dist/deploy-commands.js",
     "dev": "DEBUG=true nodemon app.js"
   },
   "author": "",
