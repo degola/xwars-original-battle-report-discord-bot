@@ -1,6 +1,6 @@
 # X-Wars Original Battle Report Parser & Discord Bot
 
-This is a Discord bot that parses the original battle reports from the game [X-Wars](https://original.xwars.net) and posts them to a Discord channel. To see it in Action visit the X-Wars Discord Server (https://discord.gg/MutQ4zPD).
+This is a Discord bot that parses the original battle reports from the game [X-Wars](https://original.xwars.net) and posts them to a Discord channel. To see it in action visit the X-Wars Discord Server (https://discord.gg/MutQ4zPD).
 
 ## Usage
 
@@ -19,10 +19,12 @@ You can add this bot to your own Discord server with the following [Link](https:
 This bot was created within a few hours, please feel free to tidy it up and make it better, 
 PRs more than welcome!
 
-The bot is written for NodeJS v18+ and has several files:
-  - `app.js`: main application and Discord bot which listens to commands
-  - `deploy-commands.js`: deploys the commands configuration to the Discord server based on files in the `commands/` folder
-  - `parser.js`: retrieves the battle report, retrieves data from the report and saves it anonymized to disk 
-  - `message.js`: creates different message formats
-  - `guild-config-storage`: sqlite3 storage for guild configuration
+The bot is written for NodeJS v18+ and has several files in the `src` directory:
+  - `app.ts`: main application and Discord bot which listens to commands
+  - `deploy-commands.ts`: deploys the commands configuration to the Discord server based on files in the `commands/` folder
+  - `command.ts`: manages loading and execution of commands from the `commands/` folder
+  - `parser.ts`: retrieves the battle report, extracts data from the report and saves it anonymized to disk 
+  - `message.ts`: creates different message formats
+  - `guild-config-storage.ts`: sqlite3 storage for guild configuration
+  - `model/report`: models used by the json-object-mapper to map the JSON data from reports
 
