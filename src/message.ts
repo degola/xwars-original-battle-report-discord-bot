@@ -34,13 +34,12 @@ function formatNumber(i: number) {
 /**
  * Creates a detailed text message
  *
- * @param parsedJsonData - data from the battle report
- * @param fleetLostDataParsed - lost fleet data from the battle report
+ * @param data - data from the battle report
  * @param finalReportUrl - Url of the anonymised battel report
  * @param user - name of the user who parsed the battle report
  * @returns the message in text format
  */
-export const createTextMessage = (
+const createTextMessage = (
   data: Data,
   finalReportUrl: string,
   user: string
@@ -128,10 +127,22 @@ export const createTextMessage = (
 
 **Attacker:** ${attackerAlliance}${
       data.parties.attacker.planet.user_alias
-    } with **${data.getCount(MpType.fighting, PartyEnum.attacker).toLocaleString()}** ships and **${attackerMP}mp** (${data.getAttack(MpType.fighting, PartyEnum.attacker).toLocaleString()}/${data.getDefense(MpType.fighting, PartyEnum.attacker).toLocaleString()})
+    } with **${data
+      .getCount(MpType.fighting, PartyEnum.attacker)
+      .toLocaleString()}** ships and **${attackerMP}mp** (${data
+      .getAttack(MpType.fighting, PartyEnum.attacker)
+      .toLocaleString()}/${data
+      .getDefense(MpType.fighting, PartyEnum.attacker)
+      .toLocaleString()})
 **Defender:** ${defenderAlliance}${
       data.parties.defender.planet.user_alias
-    } with **${data.getCount(MpType.fighting, PartyEnum.defender).toLocaleString()}** ships/defense units and **${defenderMP}mp** (${data.getAttack(MpType.fighting, PartyEnum.defender).toLocaleString()}/${data.getDefense(MpType.fighting, PartyEnum.defender).toLocaleString()})
+    } with **${data
+      .getCount(MpType.fighting, PartyEnum.defender)
+      .toLocaleString()}** ships/defense units and **${defenderMP}mp** (${data
+      .getAttack(MpType.fighting, PartyEnum.defender)
+      .toLocaleString()}/${data
+      .getDefense(MpType.fighting, PartyEnum.defender)
+      .toLocaleString()})
         ${fleetLostResponse}
         ${resultResponse}
         ${"-".repeat(100)}`,
@@ -143,16 +154,10 @@ export const createTextMessage = (
  * Creates a short one-line message
  *
  * @param data - data from the battle report
- * @param fleetLostData - lost fleet data from the battle report
  * @param finalReportUrl - Url of the anonymised battel report
- * @param user - name of the user who parsed the battle report
  * @returns the message in embed format
  */
-export const createOneLineMessage = (
-  data: Data,
-  finalReportUrl: string,
-  user: string
-) => {
+const createOneLineMessage = (data: Data, finalReportUrl: string) => {
   let attacker = data.parties.attacker.planet.user_alias;
   let defender = data.parties.defender.planet.user_alias;
   let loot = "";
@@ -186,4 +191,31 @@ export const createOneLineMessage = (
   );
 
   return { text: undefined, embed: embed };
+};
+
+/**
+ * Creates a message according to format
+ *
+ * @param format - format of the message
+ * @param data - data from the battle report
+ * @param finalReportUrl - Url of the anonymised battel report
+ * @param user - name of the user who parsed the battle report
+ * @returns the message in text format
+ */
+export const createMessage = (
+  format: string,
+  data: Data,
+  finalReportUrl: string,
+  user: string
+) => {
+  switch (format) {
+    case "text":
+      return createTextMessage(data, finalReportUrl, user);
+      break;
+    case "oneline":
+      return createOneLineMessage(data, finalReportUrl);
+      break;
+    default:
+      throw new Error("unknown format");
+  }
 };

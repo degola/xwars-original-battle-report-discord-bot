@@ -77,24 +77,15 @@ const command = async (
 
   const format =
     interaction.options.get("format")?.value?.toString() ||
-    (await config.getValue(guild.id, "default_format_user"));
+    (await config.getValue(guild.id, "default_format_user")) ||
+    "text";
 
   try {
-    const { reportId, data } = await parser.parseReport(
-      reportUrl
-    );
+    const { reportId, data } = await parser.parseReport(reportUrl);
     const finalReportUrl = [REPORT_URL_BASE, reportId].join("");
-    let msgFunction;
-    switch (format) {
-      case "oneline":
-        msgFunction = message.createOneLineMessage;
-        break;
-      case "text":
-      default:
-        msgFunction = message.createTextMessage;
-        break;
-    }
-    const { text, embed } = msgFunction(
+
+    const { text, embed } = message.createMessage(
+      format,
       data,
       finalReportUrl,
       interaction.user.toString()

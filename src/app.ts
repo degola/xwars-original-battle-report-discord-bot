@@ -127,13 +127,15 @@ import { GuildConfigStorage } from "./guild-config-storage";
         "as",
         finalReportUrl
       );
-      const msgText = message.createTextMessage(
+      const msgText = message.createMessage(
+        "text",
         data,
         finalReportUrl,
         "__**X-Wars Original News Agency:**__"
       );
 
-      const msgOneLine = message.createOneLineMessage(
+      const msgOneLine = message.createMessage(
+        "oneline",
         data,
         finalReportUrl,
         "__**X-Wars Original News Agency:**__"
