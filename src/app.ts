@@ -27,7 +27,6 @@ import { CommandManager } from "./command"
 import * as parser from "./parser"
 import * as message from "./message"
 import { GuildConfigStorage } from "./guild-config-storage"
-
 ;(async function () {
     const app = express()
 
@@ -119,8 +118,8 @@ import { GuildConfigStorage } from "./guild-config-storage"
             if (typeof reportUrl != "string")
                 throw new Error("report url isnt string")
             console.log("received report url via HTTP request", reportUrl)
-            const { reportId, data, fleetData } = await parser.parseReport(
-                reportUrl
+            const { reportId, data, fleetData } = parser.parseReport(
+                await parser.fetchUrl(reportUrl)
             )
             const finalReportUrl = [REPORT_URL_BASE, reportId].join("")
             console.log(

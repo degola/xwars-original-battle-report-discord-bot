@@ -84,8 +84,8 @@ const command = async (
         "text"
 
     try {
-        const { reportId, data, fleetData } = await parser.parseReport(
-            reportUrl
+        const { reportId, data, fleetData } = parser.parseReport(
+            await parser.fetchUrl(reportUrl)
         )
         const finalReportUrl = [REPORT_URL_BASE, reportId].join("")
 

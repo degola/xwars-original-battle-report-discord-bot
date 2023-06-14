@@ -76,7 +76,7 @@ function cleanContentByIdentifier(
  * @param reportContent - content of the battle report
  * @returns A map containing the report uuid and data from the report.
  */
-export async function parseReport(reportContent: string) {
+export function parseReport(reportContent: string) {
     const jsonData = findLineByIdentifier("JSON:", reportContent)
     if (!jsonData)
         throw new ParseError(
