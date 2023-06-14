@@ -4,6 +4,7 @@ import fs from "node:fs"
 import { ObjectMapper } from "json-object-mapper"
 import { Data } from "./model/report/Data"
 import { Fleet } from "./model/report/Fleet"
+import { validateData, validateFleetData } from "./validator"
 
 /**
  * The parser will throw this error if the report can't be parsed
@@ -65,61 +66,91 @@ function cleanContentByIdentifier(
         .join("\n")
 }
 
-/** Retrieves the battle report, extracts data, anonymizes the report and saves it.
+/** Extracts data from report, anonymizes the report and saves it.
  *
  * Return values:
  *  - reportId: id of the anonymized report
  *  - data:
  *  - fleetLostData:
  *
- * @param reportUrl - Url of the report from the original.xwars.net server
+ * @param reportContent - content of the battle report
  * @returns A map containing the report uuid and data from the report.
  */
-export async function parseReport(reportUrl: string) {
-    if (
-        !reportUrl.match(
-            /^https:\/\/original.xwars.net\/reports\/(index\.php|)\?id=(.*)/
-        )
-    )
-        throw new ParseError(
-            "sorry, the url provided is not a valid battle report url"
-        )
-    let reportContent = null
-    try {
-        reportContent = await axios.get(reportUrl)
-    } catch (e) {
-        console.log("error while retrieving battle report", e)
-        throw new ParseError(
-            "sorry, unable to retrieve the battle report, either the url is incorrect or unable to fetch the battle report temporarily, please try again later."
-        )
-    }
-    if (!reportContent.data) {
-        console.log("error while retrieving battle report, empty content")
-        throw new ParseError(
-            "sorry, unable to retrieve the battle report, either the url is incorrect or unable to fetch the battle report temporarily, please try again later."
-        )
-    }
-
-    const jsonData = findLineByIdentifier("JSON:", reportContent.data)
+export async function parseReport(reportContent: string) {
+    const jsonData = findLineByIdentifier("JSON:", reportContent)
     if (!jsonData)
         throw new ParseError(
             "sorry, unable to parse the battle report, it's too old for this bot :-(."
         )
 
-    const data = ObjectMapper.deserialize(Data, JSON.parse(jsonData))
+    const rawData = JSON.parse(jsonData)
+
+    /*
+     * If the attacker|defender has only surviving
+     *  - drones + light
+     *  - drones + light + medium
+     *  - drones + light + medium + heavy
+     * the property ships.result.att|ships.result.def will be an array instead of an
+     * object. This needs to be corrected before validation
+     */
+    if (rawData && rawData.ships && rawData.ships.result) {
+        if (
+            rawData.ships.result.def &&
+            rawData.ships.result.def instanceof Array
+        ) {
+            const oldDef = rawData.ships.result.def
+            const newDef: { [k: string]: any } = {}
+            for (let i = 0; i < oldDef.length; i++)
+                newDef[(i + 1).toString()] = oldDef[i]
+            rawData.ships.result.def = newDef
+        }
+        if (
+            rawData.ships.result.att &&
+            rawData.ships.result.att instanceof Array
+        ) {
+            const oldAtt = rawData.ships.result.def
+            const newAtt: { [k: string]: any } = {}
+            for (let i = 0; i < oldAtt.length; i++)
+                newAtt[(i + 1).toString()] = oldAtt[i]
+            rawData.ships.result.def = newAtt
+        }
+    }
+
+    const valid = validateData(rawData)
+
+    if (!valid) {
+        console.log("data: JSON validation error\n", validateData.errors)
+        throw new Error("JSON validation error")
+    }
+    const data = ObjectMapper.deserialize(Data, rawData)
 
     let fleetData: Fleet[] = []
-    const jsonFleetData = findLineByIdentifier("JSON2:", reportContent.data)
+    const jsonFleetData = findLineByIdentifier("JSON2:", reportContent)
     if (jsonFleetData) {
-        fleetData = ObjectMapper.deserializeArray(
-            Fleet,
-            JSON.parse(jsonFleetData)
-        )
+        const rawFleetData: Array<any> = JSON.parse(jsonFleetData)
+
+        /* 
+         * If a fleet is destroyed completely the property frest is an empty string instead
+         * of null. I couldn't figure out how to correct this inside the json schema so the 
+         * empty string needs to be replaced before validation.
+         */
+        for (const fleet of rawFleetData) {
+            if (fleet.frest == "") fleet.frest = { at: 0, de: 0, cn: 0 }
+        }
+
+        if (!validateFleetData(rawFleetData)) {
+            console.log(
+                "fleetData: JSON validation error\n",
+                validateFleetData.errors
+            )
+            throw new Error("JSON validation error")
+        }
+        fleetData = ObjectMapper.deserializeArray(Fleet, rawFleetData)
     }
 
     let cleanedReportContent = cleanContentByIdentifier(
         ["JSON:", "JSON2:"],
-        reportContent.data,
+        reportContent,
         "json report data reduced for anonymity"
     )
     cleanedReportContent = cleanedReportContent
@@ -166,4 +197,44 @@ export async function parseReport(reportUrl: string) {
         data: data,
         fleetData: fleetData,
     }
+}
+
+/**
+ * Retrieves the report from a url and return the content
+ * @param reportUrl url of the report
+ * @returns content of the report
+ */
+export async function fetchUrl(reportUrl: string): Promise<string> {
+    if (
+        !reportUrl.match(
+            /^https:\/\/original.xwars.net\/reports\/(index\.php|)\?id=(.*)/
+        )
+    )
+        throw new ParseError(
+            "sorry, the url provided is not a valid battle report url"
+        )
+    let response = null
+    try {
+        response = await axios.get(reportUrl)
+    } catch (e) {
+        console.log("error while retrieving battle report", e)
+        throw new ParseError(
+            "sorry, unable to retrieve the battle report, either the url is incorrect or unable to fetch the battle report temporarily, please try again later."
+        )
+    }
+    if (!response.data) {
+        console.log("error while retrieving battle report, empty content")
+        throw new ParseError(
+            "sorry, unable to retrieve the battle report, either the url is incorrect or unable to fetch the battle report temporarily, please try again later."
+        )
+    }
+    if (typeof response.data != "string") {
+        console.log("error content data is no string")
+
+        throw new ParseError(
+            "sorry, unable to retrieve the battle report, either the url is incorrect or unable to fetch the battle report temporarily, please try again later."
+        )
+    }
+
+    return response.data
 }
