@@ -22,9 +22,11 @@ PRs more than welcome!
 The bot is written for NodeJS v18+ and has several files in the `src` directory:
   - `app.ts`: main application and Discord bot which listens to commands
   - `deploy-commands.ts`: deploys the commands configuration to the Discord server based on files in the `commands/` folder
+  - `validator_test.ts`: parses reports from `test/reports/*.html` and report errors
   - `command.ts`: manages loading and execution of commands from the `commands/` folder
   - `parser.ts`: retrieves the battle report, extracts data from the report and saves it anonymized to disk 
   - `message.ts`: creates different message formats
   - `guild-config-storage.ts`: sqlite3 storage for guild configuration
+  - `validator.ts`: provides validators for json data from reports
   - `model/report`: models used by the json-object-mapper to map the JSON data from reports
 
