@@ -100,8 +100,8 @@ export function parseReport(reportContent: string) {
         ) {
             const oldDef = rawData.ships.result.def
             const newDef: { [k: string]: any } = {}
-            for (let i = 0; i < oldDef.length; i++)
-                newDef[(i + 1).toString()] = oldDef[i]
+            for (let i = 1; i < oldDef.length; i++)
+                newDef[i.toString()] = oldDef[i]
             rawData.ships.result.def = newDef
         }
         if (
@@ -110,8 +110,8 @@ export function parseReport(reportContent: string) {
         ) {
             const oldAtt = rawData.ships.result.def
             const newAtt: { [k: string]: any } = {}
-            for (let i = 0; i < oldAtt.length; i++)
-                newAtt[(i + 1).toString()] = oldAtt[i]
+            for (let i = 1; i < oldAtt.length; i++)
+                newAtt[i.toString()] = oldAtt[i]
             rawData.ships.result.def = newAtt
         }
     }
@@ -129,9 +129,9 @@ export function parseReport(reportContent: string) {
     if (jsonFleetData) {
         const rawFleetData: Array<any> = JSON.parse(jsonFleetData)
 
-        /* 
+        /*
          * If a fleet is destroyed completely the property frest is an empty string instead
-         * of null. I couldn't figure out how to correct this inside the json schema so the 
+         * of null. I couldn't figure out how to correct this inside the json schema so the
          * empty string needs to be replaced before validation.
          */
         for (const fleet of rawFleetData) {
