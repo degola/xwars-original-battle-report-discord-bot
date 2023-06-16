@@ -1,5 +1,5 @@
 import { JsonProperty } from "json-object-mapper"
-import { ModifierClass } from "./ModifierClass"
+import { ModifierClass } from "./ModifierClass.js"
 
 export class Modifier {
     @JsonProperty({ name: "shields", type: ModifierClass })

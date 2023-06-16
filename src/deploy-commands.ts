@@ -12,7 +12,7 @@ if (!DISCORD_BOT_TOKEN || !DISCORD_BOT_CLIENT_ID)
 
 import { REST, Routes } from "discord.js"
 import path from "node:path"
-import { CommandManager } from "./command"
+import { CommandManager } from "./command.js"
 
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(DISCORD_BOT_TOKEN)

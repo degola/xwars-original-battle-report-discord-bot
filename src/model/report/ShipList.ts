@@ -1,6 +1,6 @@
 import { JsonProperty } from "json-object-mapper"
-import { ShipListParty } from "./ShipListParty"
-import { PartyEnum, ShipClassEnum } from "./Enums"
+import { ShipListParty } from "./ShipListParty.js"
+import { PartyEnum, ShipClassEnum } from "./Enums.js"
 
 export class ShipList {
     @JsonProperty({ name: "att", type: ShipListParty })

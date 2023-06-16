@@ -2,7 +2,9 @@
  * Provides validation for json data in batte reports.
  */
 
-import Ajv from "ajv"
+import _Ajv from "ajv"
+const Ajv = _Ajv as unknown as typeof _Ajv.default
+
 const ajv = new Ajv({
     removeAdditional: "all",
     useDefaults: "empty",

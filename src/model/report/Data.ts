@@ -1,8 +1,8 @@
 import { JsonProperty } from "json-object-mapper"
-import { Parties } from "./Parties"
-import { Loot } from "./Loot"
-import { MpType, PartyEnum, ShipClassEnum } from "./Enums"
-import { Ships } from "./Ships"
+import { Parties } from "./Parties.js"
+import { Loot } from "./Loot.js"
+import { MpType, PartyEnum, ShipClassEnum } from "./Enums.js"
+import { Ships } from "./Ships.js"
 
 export class Data {
     @JsonProperty({ name: "time" })

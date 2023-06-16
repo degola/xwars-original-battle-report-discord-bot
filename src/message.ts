@@ -7,9 +7,9 @@
  */
 
 import { EmbedBuilder } from "discord.js"
-import { Data } from "./model/report/Data"
-import { MpType, PartyEnum } from "./model/report/Enums"
-import { Fleet } from "./model/report/Fleet"
+import { Data } from "./model/report/Data.js"
+import { MpType, PartyEnum } from "./model/report/Enums.js"
+import { Fleet } from "./model/report/Fleet.js"
 
 /**
  * Formats a number to reduce characters needed to display it. Uses prefixes k and M. Rounds number to one or no decimal places.

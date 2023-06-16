@@ -1,6 +1,6 @@
 import { JsonProperty } from "json-object-mapper"
-import { LootInfo } from "./LootInfo"
-import { LootValues } from "./LootValues"
+import { LootInfo } from "./LootInfo.js"
+import { LootValues } from "./LootValues.js"
 
 export class Loot {
     @JsonProperty({ name: "info", type: LootInfo })

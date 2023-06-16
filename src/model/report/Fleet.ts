@@ -1,5 +1,5 @@
 import { JsonProperty } from "json-object-mapper"
-import { FleetValues } from "./FleetValues"
+import { FleetValues } from "./FleetValues.js"
 
 export class Fleet {
     @JsonProperty()

@@ -15,12 +15,12 @@ const DEBUG = process.env.DEBUG || false
 const REPORT_URL_BASE =
     process.env.REPORT_URL_BASE || "https://kb.original.xwars.net/"
 
-import { Command } from "../../command"
+import { Command } from "../../command.js"
 
-import * as parser from "../../parser"
-import * as message from "../../message"
+import * as parser from "../../parser.js"
+import * as message from "../../message.js"
 
-import { GuildConfigStorage } from "../../guild-config-storage"
+import { GuildConfigStorage } from "../../guild-config-storage.js"
 const config = new GuildConfigStorage()
 
 import {

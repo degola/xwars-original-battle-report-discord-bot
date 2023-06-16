@@ -1,7 +1,7 @@
 import { JsonProperty } from "json-object-mapper"
 
-import { ShipList } from "./ShipList"
-import { Modifier } from "./Modifier"
+import { ShipList } from "./ShipList.js"
+import { Modifier } from "./Modifier.js"
 
 export class Ships {
     @JsonProperty({ name: "result", type: ShipList })

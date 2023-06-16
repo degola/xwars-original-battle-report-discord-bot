@@ -1,5 +1,5 @@
 import { JsonProperty } from "json-object-mapper"
-import { Party } from "./Party"
+import { Party } from "./Party.js"
 
 export class Parties {
     @JsonProperty({ name: "defender", type: Party })

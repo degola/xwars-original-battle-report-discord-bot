@@ -8,7 +8,7 @@
  * is optional. By omitting the format, the current setting will be returned.
  */
 
-import { Command } from "../../command"
+import { Command } from "../../command.js"
 
 import {
     ChatInputCommandInteraction,
@@ -16,7 +16,7 @@ import {
     PermissionFlagsBits,
 } from "discord.js"
 
-import { GuildConfigStorage } from "../../guild-config-storage"
+import { GuildConfigStorage } from "../../guild-config-storage.js"
 const config = new GuildConfigStorage()
 
 const builder = new SlashCommandBuilder()
@@ -47,6 +47,30 @@ builder
                         { name: "text", value: "text" },
                         { name: "oneline", value: "oneline" }
                     )
+            )
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName("publish_push_reports")
+            .setDescription(
+                "Sets or gets whether or not the bot should publish push reports"
+            )
+            .addBooleanOption((option) =>
+                option
+                    .setName("value")
+                    .setDescription(
+                        "The value publish_push_reports will be set to"
+                    )
+            )
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName("report_channel")
+            .setDescription(
+                "Sets or gets the channel reports will be published in"
+            )
+            .addStringOption((option) =>
+                option.setName("id").setDescription("the id of the channel")
             )
     )
 

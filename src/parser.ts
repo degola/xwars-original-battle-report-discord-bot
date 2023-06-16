@@ -2,9 +2,9 @@ import axios from "axios"
 import { v4 as uuid } from "uuid"
 import fs from "node:fs"
 import { ObjectMapper } from "json-object-mapper"
-import { Data } from "./model/report/Data"
-import { Fleet } from "./model/report/Fleet"
-import { validateData, validateFleetData } from "./validator"
+import { Data } from "./model/report/Data.js"
+import { Fleet } from "./model/report/Fleet.js"
+import { validateData, validateFleetData } from "./validator.js"
 
 /**
  * The parser will throw this error if the report can't be parsed
@@ -99,7 +99,7 @@ export function parseReport(reportContent: string) {
             rawData.ships.result.def instanceof Array
         ) {
             const oldDef = rawData.ships.result.def
-            const newDef: { [k: string]: any } = {}
+            const newDef: { [k: string]: any } = {} // eslint-disable-line @typescript-eslint/no-explicit-any
             for (let i = 1; i < oldDef.length; i++)
                 newDef[i.toString()] = oldDef[i]
             rawData.ships.result.def = newDef
@@ -109,7 +109,7 @@ export function parseReport(reportContent: string) {
             rawData.ships.result.att instanceof Array
         ) {
             const oldAtt = rawData.ships.result.def
-            const newAtt: { [k: string]: any } = {}
+            const newAtt: { [k: string]: any } = {} // eslint-disable-line @typescript-eslint/no-explicit-any
             for (let i = 1; i < oldAtt.length; i++)
                 newAtt[i.toString()] = oldAtt[i]
             rawData.ships.result.def = newAtt
@@ -127,7 +127,7 @@ export function parseReport(reportContent: string) {
     let fleetData: Fleet[] = []
     const jsonFleetData = findLineByIdentifier("JSON2:", reportContent)
     if (jsonFleetData) {
-        const rawFleetData: Array<any> = JSON.parse(jsonFleetData)
+        const rawFleetData: Array<any> = JSON.parse(jsonFleetData) // eslint-disable-line @typescript-eslint/no-explicit-any
 
         /*
          * If a fleet is destroyed completely the property frest is an empty string instead

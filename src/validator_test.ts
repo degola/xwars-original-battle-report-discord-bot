@@ -3,7 +3,7 @@ import "reflect-metadata"
 
 import path from "path"
 import fs from "fs"
-import { parseReport } from "./parser"
+import { parseReport } from "./parser.js"
 
 async function main() {
 

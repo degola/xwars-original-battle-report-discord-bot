@@ -1,5 +1,5 @@
 import { JsonProperty } from "json-object-mapper"
-import { Planet } from "./Planet"
+import { Planet } from "./Planet.js"
 
 export class Party {
     @JsonProperty({ name: "planet", type: Planet })

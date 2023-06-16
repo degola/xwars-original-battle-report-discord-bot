@@ -23,10 +23,10 @@ import {
     TextChannel,
 } from "discord.js"
 
-import { CommandManager } from "./command"
-import * as parser from "./parser"
-import * as message from "./message"
-import { GuildConfigStorage } from "./guild-config-storage"
+import { CommandManager } from "./command.js"
+import * as parser from "./parser.js"
+import * as message from "./message.js"
+import { GuildConfigStorage } from "./guild-config-storage.js"
 ;(async function () {
     const app = express()
 
