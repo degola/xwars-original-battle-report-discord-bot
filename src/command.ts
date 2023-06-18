@@ -9,7 +9,6 @@ import {
 } from "discord.js"
 
 import fs from "node:fs"
-import path from "node:path"
 
 /**
  * Represents a slash command. Consists of a SlashCommandBuilder used to
@@ -53,20 +52,20 @@ export class CommandManager implements Iterable<Command> {
      *
      * @param foldersPath - Path to the root folder of the commands directory
      */
-    constructor(foldersPath: string) {
+    constructor(foldersPath: URL) {
         const commandFolders = fs.readdirSync(foldersPath)
 
         for (const folder of commandFolders) {
-            const commandsPath = path.join(foldersPath, folder)
+            const commandsPath = new URL(folder + "/", foldersPath)
             const commandFiles = fs
                 .readdirSync(commandsPath)
                 .filter((file) => file.endsWith(".js"))
 
             for (const file of commandFiles) {
-                const filePath = path.join(commandsPath, file)
-                const promise = import(filePath)
+                const filePath = new URL(file, commandsPath)
+                const promise = import(filePath.toString())
                 promise.then((obj) => {
-                    const command: Command = obj.default
+                    const command: Command = obj.command
                     this.#commands.set(command.data.name, command)
                 })
                 this.#promises.push(promise)
@@ -79,7 +78,7 @@ export class CommandManager implements Iterable<Command> {
      * @param foldersPath - Path to the root folder of the commands directory
      * @returns CommandManager with populated commands collection
      */
-    public static loadFolder = async (foldersPath: string) => {
+    public static loadFolder = async (foldersPath: URL) => {
         const manager = new CommandManager(foldersPath)
         await Promise.all(manager.#promises)
 

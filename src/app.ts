@@ -11,8 +11,6 @@ const REPORT_TOKEN = process.env.REPORT_TOKEN || "no-token-defined"
 if (!DISCORD_BOT_TOKEN)
     throw new Error("missing required environment variable DISCORD_BOT_TOKEN")
 
-import path from "node:path"
-
 import express from "express"
 import {
     Awaitable,
@@ -36,7 +34,7 @@ import { GuildConfigStorage } from "./guild-config-storage.js"
     const client = new Client({ intents: [GatewayIntentBits.Guilds] })
 
     const commands = await CommandManager.loadFolder(
-        path.join(__dirname, "commands")
+        new URL('commands/', import.meta.url)
     )
 
     // When the client is ready, run this code (only once)

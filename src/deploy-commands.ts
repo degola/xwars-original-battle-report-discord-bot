@@ -11,7 +11,6 @@ if (!DISCORD_BOT_TOKEN || !DISCORD_BOT_CLIENT_ID)
     )
 
 import { REST, Routes } from "discord.js"
-import path from "node:path"
 import { CommandManager } from "./command.js"
 
 // Construct and prepare an instance of the REST module
@@ -22,7 +21,7 @@ const rest = new REST().setToken(DISCORD_BOT_TOKEN)
     try {
         const commands = []
         const manager = await CommandManager.loadFolder(
-            path.join(__dirname, "commands")
+            new URL('commands/', import.meta.url)
         )
 
         for (const command of manager) {
