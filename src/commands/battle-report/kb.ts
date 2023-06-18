@@ -59,7 +59,7 @@ builder
             .setRequired(false)
     )
 
-const command = async (
+const execute = async (
     interaction: ChatInputCommandInteraction
 ): Promise<void> => {
     const reportUrl = interaction.options.get("url")?.value?.toString()
@@ -147,4 +147,5 @@ const command = async (
     }
 }
 
-module.exports = new Command(builder, command)
+export const command = new Command(builder, execute)
+

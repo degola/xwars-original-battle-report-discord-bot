@@ -74,7 +74,7 @@ builder
             )
     )
 
-const command = async (interaction: ChatInputCommandInteraction) => {
+const execute = async (interaction: ChatInputCommandInteraction) => {
     const subcommand = interaction.options.getSubcommand()
     const type = interaction.options.get("type")?.value?.toString()
     const format = interaction.options.get("format")?.value?.toString()
@@ -119,4 +119,4 @@ const command = async (interaction: ChatInputCommandInteraction) => {
     }
 }
 
-module.exports = new Command(builder, command)
+export const command = new Command(builder, execute)
