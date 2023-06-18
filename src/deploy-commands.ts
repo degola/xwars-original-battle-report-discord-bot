@@ -17,33 +17,31 @@ import { CommandManager } from "./command.js"
 const rest = new REST().setToken(DISCORD_BOT_TOKEN)
 
 // and deploy your commands!
-;(async () => {
-    try {
-        const commands = []
-        const manager = await CommandManager.loadFolder(
-            new URL('commands/', import.meta.url)
-        )
+try {
+    const commands = []
+    const manager = await CommandManager.loadFolder(
+        new URL("commands/", import.meta.url)
+    )
 
-        for (const command of manager) {
-            commands.push(command.data.toJSON())
-        }
-        console.log(
-            `Started refreshing ${commands.length} application (/) commands.`
-        )
-
-        // The put method is used to fully refresh all commands in the guild with the current set
-        const data = await rest.put(
-            Routes.applicationCommands(DISCORD_BOT_CLIENT_ID),
-            { body: commands }
-        )
-
-        if (data instanceof Array) {
-            console.log(
-                `Successfully reloaded ${data.length} application (/) commands.`
-            )
-        }
-    } catch (error) {
-        // And of course, make sure you catch and log any errors!
-        console.error(error)
+    for (const command of manager) {
+        commands.push(command.data.toJSON())
     }
-})()
+    console.log(
+        `Started refreshing ${commands.length} application (/) commands.`
+    )
+
+    // The put method is used to fully refresh all commands in the guild with the current set
+    const data = await rest.put(
+        Routes.applicationCommands(DISCORD_BOT_CLIENT_ID),
+        { body: commands }
+    )
+
+    if (data instanceof Array) {
+        console.log(
+            `Successfully reloaded ${data.length} application (/) commands.`
+        )
+    }
+} catch (error) {
+    // And of course, make sure you catch and log any errors!
+    console.error(error)
+}
