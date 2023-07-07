@@ -6,7 +6,7 @@ ADD . /app
 ADD package.json /app
 ADD package-lock.json /app
 
-RUN npm install
+RUN npm install && npm run build
 
 EXPOSE 3000
 ENTRYPOINT ["npm", "run", "bot"]

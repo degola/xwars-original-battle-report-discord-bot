@@ -3,3 +3,4 @@
 reports/*.html
 node_modules
 **/*.sqlite3
+dist
